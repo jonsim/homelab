@@ -1,18 +1,17 @@
 services:
-  nginx:
-    image: nginx:stable-alpine
-    container_name: web-nginx
+  caddy:
+    image: caddy:alpine
+    container_name: web-caddy
     restart: unless-stopped
     volumes:
       - ./www:/var/www/html:ro
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
     depends_on:
       - php
     networks:
       - webnet
-    # No "ports:" section on purpose — nginx is only reachable via the
-    # internal Docker network. cloudflared talks to it directly; nothing
-    # is exposed to your LAN or the internet on this host.
+    # No "ports:" section on purpose — the proxy is only reachable via the
+    # internal Docker network; cloudflared talks to it directly.
 
   php:
     build: ./php
@@ -43,8 +42,6 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - webnet
-    # No host port published either — only the php container can reach
-    # it, via the "db" hostname on the webnet network.
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -54,7 +51,7 @@ services:
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
     depends_on:
-      - nginx
+      - caddy
     networks:
       - webnet
 
