@@ -1,3 +1,11 @@
+portainer.gonzo.home.jonsim.com {
+	tls {
+		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+	}
+
+	reverse_proxy portainer:9000
+}
+
 :80 {
 	root * /var/www/html
 	encode gzip

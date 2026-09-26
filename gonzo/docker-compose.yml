@@ -1,17 +1,21 @@
 services:
   caddy:
-    image: caddy:alpine
+    build: ./caddy
     container_name: web-caddy
     restart: unless-stopped
+    environment:
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
       - ./www:/var/www/html:ro
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
     depends_on:
       - php
     networks:
       - webnet
-    # No "ports:" section on purpose — the proxy is only reachable via the
-    # internal Docker network; cloudflared talks to it directly.
 
   php:
     build: ./php
@@ -55,9 +59,21 @@ services:
     networks:
       - webnet
 
+  portainer:
+    image: portainer/portainer-ce:lts
+    container_name: portainer
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - webnet
+
 networks:
   webnet:
     driver: bridge
 
 volumes:
+  caddy_data:
   db_data:
+  portainer_data:
