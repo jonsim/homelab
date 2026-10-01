@@ -26,7 +26,10 @@ recovery instructions.
 
 ## Set up the project
 
-Install [uv](https://docs.astral.sh/uv/) and the development tools:
+Install [uv](https://docs.astral.sh/uv/), `docker` and `docker-compose`.
+
+
+Sync the remainder of the repositories dependencies:
 
 ```sh
 uv sync
@@ -67,4 +70,3 @@ hosts over SSH:
 ```
 
 Review the destination host's README before deploying.
-
