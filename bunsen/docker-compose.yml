@@ -1,0 +1,40 @@
+name: bunsen
+
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:${HOME_ASSISTANT_VERSION:-2026.9.4}
+    container_name: bunsen-homeassistant
+    restart: unless-stopped
+    network_mode: host
+    privileged: true
+    stop_grace_period: 60s
+    environment:
+      TZ: ${TZ:-Europe/London}
+    volumes:
+      - ./homeassistant/config:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+
+  caddy:
+    build:
+      context: ./caddy
+      args:
+        CADDY_VERSION: ${CADDY_VERSION:-2.11.4}
+    container_name: bunsen-caddy
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    environment:
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?Set CLOUDFLARE_API_TOKEN in .env}
+      HA_DOMAIN: ${HA_DOMAIN:-homeassistant.home.jonsim.com}
+    volumes:
+      - ./caddy:/etc/caddy:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - homeassistant
+
+volumes:
+  caddy_data:
+  caddy_config:
