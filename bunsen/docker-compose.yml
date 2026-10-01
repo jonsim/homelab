@@ -50,13 +50,12 @@ services:
     image: portainer/agent:2.45.1@sha256:38bc1dc7b8470eecbd979d444aa5d0a187dacf1245f2b54466f0f25f4c6d9a7c
     container_name: bunsen-portainer-agent
     restart: unless-stopped
-    # If Gonzo's Portainer Server uses AGENT_SECRET, uncomment these lines and
-    # set the identical value in Bunsen's .env file.
-    # environment:
-    #   AGENT_SECRET: ${AGENT_SECRET:?Set AGENT_SECRET in .env}
+    environment:
+      AGENT_SECRET: ${AGENT_SECRET:?Set AGENT_SECRET in .env}
     ports:
-      - "9001:9001"
+      - "${PORTAINER_AGENT_BIND_ADDRESS:?Set PORTAINER_AGENT_BIND_ADDRESS in .env}:9001:9001"
     volumes:
+      # Root-equivalent host access required for Portainer management.
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/volumes:/var/lib/docker/volumes
 

@@ -70,3 +70,10 @@ hosts over SSH:
 ```
 
 Review the destination host's README before deploying.
+
+## Security model
+
+Portainer and its agents mount the Docker socket so they can manage each host.
+Access to that socket is equivalent to root access: only trusted administrators
+should have access to Portainer, and agent port 9001 must be reachable only from
+Gonzo. All three hosts must use the same high-entropy `AGENT_SECRET`.

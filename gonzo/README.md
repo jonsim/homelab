@@ -28,9 +28,11 @@ rpi-web-stack/
    cp .env.example .env
    nano .env
    ```
-   Fill in real database credentials. Leave `TUNNEL_TOKEN` for now if you haven't
-   created the Cloudflare tunnel yet — just start the stack without cloudflared
-   running (`docker compose up -d nginx php db`) and add it later.
+   Fill in real database credentials. Generate a high-entropy `AGENT_SECRET`
+   and use that same value for the Portainer agents on Bunsen and Walter. Leave
+   `TUNNEL_TOKEN` for now if you haven't created the Cloudflare tunnel yet —
+   just start the stack without cloudflared running
+   (`docker compose up -d caddy php db portainer`) and add it later.
 
 5. Ensure local DNS resolves `portainer.home.jonsim.com` to Gonzo's LAN
    address, then validate and bring the stack up:
@@ -69,7 +71,8 @@ rpi-web-stack/
   intend to publish a service.
 - Portainer is not published directly on a host port. Caddy reaches it at
   `portainer:9000` over the private `webnet` Docker network. The Docker socket
-  mount gives Portainer full control of the Docker host.
+  mount gives Portainer root-equivalent control of the Docker host. Restrict
+  Portainer administration to trusted users.
 - Database data persists in the `db_data` Docker volume even if you
   recreate containers. Set up a cron `mysqldump` backup once things are
   stable — that volume is now your only copy of the data.

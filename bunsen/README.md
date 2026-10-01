@@ -100,12 +100,11 @@ times out before it is claimed, restart it with:
 docker compose restart portainer-agent
 ```
 
-The agent's Docker socket mount grants Portainer full control of Bunsen. Do not
-forward port 9001 from the router; ideally restrict it in the host or LAN
-firewall so only Gonzo can connect. If Gonzo's Portainer Server is configured
-with an `AGENT_SECRET`, uncomment the matching environment block in
-`docker-compose.yml` and put the same value in Bunsen's `.env` before starting
-the agent.
+The agent's Docker socket mount grants Portainer root-equivalent control of
+Bunsen. Set `AGENT_SECRET` to the same high-entropy value used by Gonzo's
+Portainer Server and Walter's agent. Set `PORTAINER_AGENT_BIND_ADDRESS` to
+Bunsen's LAN address, and restrict TCP 9001 at the host or network firewall so
+only Gonzo can connect. Never forward port 9001 from the router.
 
 The volume mount assumes Docker stores named volumes in
 `/var/lib/docker/volumes`. Confirm Bunsen's Docker root with

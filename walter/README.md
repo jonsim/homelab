@@ -48,7 +48,9 @@ Standalone → Agent**. Name it `walter` and enter `walter.home.jonsim.com:9001`
 Gonzo must be able to reach Walter on TCP 9001. The agent speaks HTTPS itself;
 it is not routed through Caddy. Do not port-forward 9001 to the Internet, and
 restrict access to it to Gonzo in your LAN firewall if possible. The agent has
-full access to Walter's Docker socket.
+root-equivalent access to Walter's Docker socket. Set `AGENT_SECRET` to the same
+high-entropy value used on Gonzo and Bunsen, and set
+`PORTAINER_AGENT_BIND_ADDRESS` to Walter's trusted LAN address.
 
 Portainer can observe this stack through the Walter agent, but manage this
 stack from these Compose files to keep one source of truth. The agent mount
