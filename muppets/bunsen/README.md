@@ -25,19 +25,17 @@ when configuring USB Zigbee or Z-Wave controllers.
 
 ## Configure the stack
 
-Create the environment file on Bunsen:
+Configure the encrypted environment file on the Ansible controller:
 
 ```sh
-cp .env.example .env
-chmod 600 .env
+sops edit muppets/bunsen/secrets.sops.env
 ```
 
-Edit `.env` and set a Cloudflare API token. Restrict the token to the
+Set a Cloudflare API token. Restrict the token to the
 `jonsim.com` zone and grant only `Zone:Read` and `DNS:Edit`. Change `HA_DOMAIN`
-if the default `homeassistant.home.jonsim.com` name is not desired. For
-the first restore, set `HOME_ASSISTANT_VERSION` to the exact version shown under
-**Settings > About** on the source HA OS system. Upgrade only after the restored
-container has been verified.
+if the default `homeassistant.home.jonsim.com` name is not desired. Deploying
+through Ansible decrypts this file and installs `/home/homeassistant/.env` on
+Bunsen with mode `0600`.
 
 Make local DNS resolve `HA_DOMAIN` to Bunsen's LAN address. DNS-01 proves
 control of the domain but does not create the client-facing A or AAAA record.

@@ -33,6 +33,12 @@ repos:
 
   - repo: local
     hooks:
+      - id: forbid-age-secret-keys
+        name: forbid age private keys
+        entry: AGE-SECRET-KEY-[1]
+        language: pygrep
+        types: [text]
+
       - id: caddy-check
         name: format and validate Caddy configs
         entry: scripts/check-caddy.sh

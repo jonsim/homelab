@@ -5,10 +5,54 @@
   serial: 1
 
   tasks:
+    - name: Check SOPS on the controller
+      ansible.builtin.command: sops --version
+      delegate_to: localhost
+      run_once: true
+      changed_when: false
+      check_mode: false
+
+    - name: Check the encrypted environment file
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/../{{ stack_source }}/secrets.sops.env"
+      delegate_to: localhost
+      register: encrypted_environment
+
+    - name: Require an encrypted environment file
+      ansible.builtin.assert:
+        that: encrypted_environment.stat.isreg | default(false)
+        fail_msg: >-
+          Missing {{ stack_source }}/secrets.sops.env. Follow the secrets setup
+          instructions in the repository README before deploying.
+
+    - name: Decrypt the deployment environment in memory
+      ansible.builtin.set_fact:
+        stack_environment: >-
+          {{ lookup(
+            'community.sops.sops',
+            playbook_dir ~ '/../' ~ stack_source ~ '/secrets.sops.env',
+            input_type='dotenv',
+            output_type='dotenv',
+            rstrip=false
+          ) }}
+      no_log: true
+
+    - name: Require deployment secrets to be configured
+      ansible.builtin.assert:
+        that:
+          - "'replace_with_' not in stack_environment"
+          - "'192.0.2.' not in stack_environment"
+        fail_msg: >-
+          {{ stack_source }}/secrets.sops.env still contains example values.
+          Edit it with SOPS before deploying.
+
     - name: Check the remote deployment prerequisites
       ansible.builtin.raw: >-
         command -v rsync >/dev/null &&
         command -v docker >/dev/null &&
+        command -v base64 >/dev/null &&
+        command -v sha256sum >/dev/null &&
+        command -v awk >/dev/null &&
         docker compose version >/dev/null
       changed_when: false
       check_mode: false
@@ -24,29 +68,29 @@
         group: false
         rsync_opts: "{{ stack_rsync_excludes }}"
 
-    - name: Check the deployment environment file
-      ansible.builtin.raw: "test -f {{ (stack_path ~ '/.env') | quote }}"
-      register: stack_env
-      changed_when: false
-      failed_when: false
-      check_mode: false
-
-    - name: Create the initial host-local environment file
-      ansible.builtin.raw: >-
-        install -m 0600
-        {{ (stack_path ~ '/.env.example') | quote }}
-        {{ (stack_path ~ '/.env') | quote }}
-      when: stack_env.rc != 0
-
-    - name: Require the initial environment file to be configured
-      ansible.builtin.fail:
-        msg: >-
-          {% if ansible_check_mode %}Missing{% else %}Created{% endif %}
-          {{ stack_path }}/.env on {{ inventory_hostname }}.
-          {% if ansible_check_mode %}Run a normal deployment to create it, then
-          {% endif %}replace every placeholder secret and address before
-          deploying the stack.
-      when: stack_env.rc != 0
+    - name: Install the decrypted deployment environment
+      ansible.builtin.raw: |
+        target={{ (stack_path ~ '/.env') | quote }}
+        expected={{ stack_environment | hash('sha256') | quote }}
+        if test -f "$target"; then
+          current=$(sha256sum "$target" | awk '{print $1}')
+        else
+          current=""
+        fi
+        if test "$current" != "$expected"; then
+          temporary="${target}.tmp.$$"
+          umask 077
+          printf '%s' {{ stack_environment | b64encode | quote }} | base64 --decode > "$temporary"
+          chmod 0600 "$temporary"
+          mv "$temporary" "$target"
+          echo environment-updated
+        else
+          chmod 0600 "$target"
+          echo environment-unchanged
+        fi
+      register: environment_install
+      changed_when: "'environment-updated' in environment_install.stdout"
+      no_log: true
 
     - name: Validate the Docker Compose model
       ansible.builtin.raw: >-

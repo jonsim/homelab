@@ -22,13 +22,18 @@ Walter's Docker engine. Both run on Unraid's built-in Docker engine.
 
 ## Deploy from the repo
 
-Ansible deploys the `walter` directory to `/mnt/user/appdata`. On Walter, from
-that directory:
+Configure Walter's encrypted environment on the Ansible controller and deploy
+it:
 
 ```sh
-cp .env.example .env
-chmod 600 .env
-# Edit .env and set the Cloudflare API token.
+sops edit muppets/walter/secrets.sops.env
+uv run ansible-playbook ansible/deploy.yml --limit walter
+```
+
+Ansible installs `/mnt/user/appdata/.env` with mode `0600`. On Walter, from
+that directory, inspect and operate the deployed stack:
+
+```sh
 docker compose config --quiet
 docker compose up -d --build
 docker compose logs --tail=100 caddy
@@ -36,7 +41,8 @@ docker compose logs --tail=100 portainer-agent
 ```
 
 The token needs **Zone:Read** and **DNS:Edit** for only the `jonsim.com` zone.
-It can be a separate token from Gonzo's Caddy token. Never commit `.env`.
+It can be a separate token from Gonzo's Caddy token. Never commit the decrypted
+`.env`.
 
 Visit `https://walter.home.jonsim.com` after Caddy obtains a certificate.
 In Gonzo's Portainer, go to **Environments → Add environment → Docker

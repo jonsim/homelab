@@ -1,0 +1,3 @@
+creation_rules:
+  - path_regex: ^muppets/[^/]+/secrets\.sops\.env$
+    age: age10rcnvvcrf4ynk24pwf37z275pd2akajkmnsv6667e4tef6xrqgasva27j5

@@ -4,7 +4,8 @@
 ```
 rpi-web-stack/
 ├── compose.yaml
-├── .env.example      → copy to .env and fill in real values
+├── .env.example           → documents the required values
+├── secrets.sops.env       → encrypted deployment values
 ├── nginx/default.conf
 ├── php/Dockerfile
 └── www/              → put your website files here (index.php, .html, etc.)
@@ -20,14 +21,15 @@ rpi-web-stack/
    Log out and back in for the group change to apply.
 
 2. From the repository root on the control machine, run
-   `uv run ansible-playbook ansible/deploy.yml --limit gonzo`. On the first
-   run Ansible creates `~/.env` and stops so it can be configured.
+   `sops edit muppets/gonzo/secrets.sops.env`, replace every placeholder, then
+   run `uv run ansible-playbook ansible/deploy.yml --limit gonzo`. Ansible
+   installs the decrypted environment at `~/.env` with mode `0600`.
 
 3. Put your site files (the ones you downloaded from cPanel) into `www/`.
 
-4. Edit the host-local environment file:
+4. Edit the encrypted environment on the controller when values change:
    ```
-   nano ~/.env
+   sops edit muppets/gonzo/secrets.sops.env
    ```
    Fill in real database credentials. Generate a high-entropy `AGENT_SECRET`
    and use that same value for the Portainer agents on Bunsen and Walter. Leave
@@ -52,7 +54,7 @@ rpi-web-stack/
    ```
    docker compose exec -T db mysql -u root -p"$MYSQL_ROOT_PASSWORD" changeme_db_name < your_dump.sql
    ```
-   (swap in your real DB name from `.env`)
+   (swap in your real DB name from the deployed `.env`)
 
 7. Test locally before touching Cloudflare/DNS at all:
    ```

@@ -26,8 +26,11 @@ recovery instructions.
 
 ## Set up the project
 
-Install [uv](https://docs.astral.sh/uv/) and Docker with the Compose plugin.
-Sync the repository's development dependencies:
+Install [uv](https://docs.astral.sh/uv/), Docker with the Compose plugin,
+[SOPS](https://github.com/getsops/sops) and
+[age](https://github.com/FiloSottile/age). SOPS and age are required only on
+the controller, not on the homelab hosts. Sync the repository's development
+dependencies:
 
 ```sh
 uv sync
@@ -39,23 +42,60 @@ Install the pre-commit hooks:
 uv run pre-commit install
 ```
 
-The real environment files contain secrets, remain on their target hosts with
-mode `0600`, and are never synchronized back into the repository.
+## Set up secrets
+
+Secrets are encrypted with SOPS and age before being committed. The age public
+recipient is stored in `.sops.yaml`; its private identity must remain outside
+the repository.
+
+Generate a dedicated identity on the controller:
+
+```sh
+mkdir -p ~/.config/sops/age
+age-keygen -o ~/.config/sops/age/keys.txt
+chmod 600 ~/.config/sops/age/keys.txt
+age-keygen -y ~/.config/sops/age/keys.txt
+```
+
+Back up `~/.config/sops/age/keys.txt` in a password manager or another secure
+offline location. Losing every copy makes the encrypted secrets unrecoverable.
+The command prints a public recipient beginning with `age1`; use it to
+initialize the repository:
+
+```sh
+scripts/bootstrap-sops.sh age1...
+```
+
+The bootstrap script creates `.sops.yaml` and one encrypted
+`secrets.sops.env` file per host from the corresponding `.env.example`. Replace
+every placeholder by editing the encrypted files through SOPS:
+
+```sh
+sops edit muppets/bunsen/secrets.sops.env
+sops edit muppets/gonzo/secrets.sops.env
+sops edit muppets/walter/secrets.sops.env
+```
+
+Verify that only encrypted values are present, then commit `.sops.yaml` and the
+three `secrets.sops.env` files. Never commit the age identity. To give another
+controller or administrator access later, add its public recipient to the
+creation rule and use `sops updatekeys` on each encrypted file.
 
 ## Validate a stack
 
-Run Docker Compose validation from the host directory:
+Validate all three Compose models using the documented placeholder values:
 
 ```sh
-cd muppets/<host>
-docker compose config --quiet
+./scripts/check-docker-compose.sh
 ```
 
 ## Deploy a stack
 
-Deployment uses Ansible over SSH without requiring Python on the target. Each
-target needs an SSH server, `rsync`, Docker with the Compose plugin, a
-configured `.env` file at the deployment path, and a matching SSH host alias.
+Deployment uses Ansible over SSH without requiring Python, SOPS or an age key
+on the target. Each target needs an SSH server, `rsync`, `base64`, `sha256sum`,
+Docker with the Compose plugin, and a matching SSH host alias. The controller
+decrypts the host's `secrets.sops.env` in memory and atomically installs `.env`
+on the target with mode `0600`.
 
 Install the pinned Ansible collection:
 
@@ -76,13 +116,10 @@ Deploy one host after reviewing its README:
 uv run ansible-playbook ansible/deploy.yml --limit gonzo
 ```
 
-On a host's first deployment, Ansible creates `.env` from `.env.example` with
-mode `0600` and stops. Edit every placeholder on that host, then rerun the same
-command.
-
 Omit `--limit` to deploy all hosts serially. Ansible preserves host-local
-secrets and application data, validates the Compose model, pulls and builds
-images, reconciles the stack, and waits for its health checks.
+application data, validates the Compose model, pulls and builds images,
+reconciles the stack, and waits for its health checks. Secret-bearing tasks use
+`no_log`; decrypted values are never written to the controller's working tree.
 
 ## Security model
 
@@ -90,3 +127,9 @@ Portainer and its agents mount the Docker socket so they can manage each host.
 Access to that socket is equivalent to root access: only trusted administrators
 should have access to Portainer, and agent port 9001 must be reachable only from
 Gonzo. All three hosts must use the same high-entropy `AGENT_SECRET`.
+
+SOPS protects secrets stored in Git, while the target `.env` files protect them
+at runtime only through filesystem permissions. Anyone with root access or
+Docker socket access on a host can read its deployed secrets. If an unencrypted
+secret has ever been committed, remove it from history where appropriate and
+rotate it; encrypting it in a later commit does not revoke the exposed value.

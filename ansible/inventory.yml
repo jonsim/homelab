@@ -7,15 +7,18 @@ all:
           stack_path: /home/homeassistant
           stack_rsync_excludes:
             - --exclude=.env
+            - --exclude=secrets.sops.env
             - --exclude=homeassistant/config/
         gonzo:
           stack_source: muppets/gonzo
           stack_path: /home/jon
           stack_rsync_excludes:
             - --exclude=.env
+            - --exclude=secrets.sops.env
             - --exclude=www/
         walter:
           stack_source: muppets/walter
           stack_path: /mnt/user/appdata
           stack_rsync_excludes:
             - --exclude=.env
+            - --exclude=secrets.sops.env
