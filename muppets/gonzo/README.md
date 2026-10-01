@@ -3,7 +3,7 @@
 ## Layout
 ```
 rpi-web-stack/
-├── docker-compose.yml
+├── compose.yaml
 ├── .env.example      → copy to .env and fill in real values
 ├── nginx/default.conf
 ├── php/Dockerfile
@@ -50,13 +50,13 @@ rpi-web-stack/
 
 6. Import your database dump into the `db` container:
    ```
-   docker exec -i web-db mysql -u root -p"$MYSQL_ROOT_PASSWORD" changeme_db_name < your_dump.sql
+   docker compose exec -T db mysql -u root -p"$MYSQL_ROOT_PASSWORD" changeme_db_name < your_dump.sql
    ```
    (swap in your real DB name from `.env`)
 
 7. Test locally before touching Cloudflare/DNS at all:
    ```
-   docker exec -it web-nginx curl localhost
+   docker compose exec caddy wget --quiet --output-document=- http://localhost
    ```
    or from another machine on your LAN, temporarily add `ports: ["8080:80"]`
    under the nginx service, `docker compose up -d nginx`, and browse to

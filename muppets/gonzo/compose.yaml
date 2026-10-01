@@ -1,8 +1,17 @@
+name: gonzo
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   caddy:
-    build: ./caddy
-    container_name: web-caddy
+    build:
+      context: ./caddy
     restart: unless-stopped
+    logging: *default-logging
     environment:
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?Set CLOUDFLARE_API_TOKEN in .env}
     ports:
@@ -27,9 +36,10 @@ services:
       - webnet
 
   php:
-    build: ./php
-    container_name: web-php
+    build:
+      context: ./php
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - ./www:/var/www/html
     environment:
@@ -51,8 +61,8 @@ services:
 
   db:
     image: mariadb:11.8.9@sha256:79d59758afc91b89b120b0a8904d637f5a3b3e1c4900f29b740d6d46c72fef68
-    container_name: web-db
     restart: unless-stopped
+    logging: *default-logging
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
       MYSQL_DATABASE: ${MYSQL_DATABASE:?Set MYSQL_DATABASE in .env}
@@ -71,8 +81,8 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:2026.9.3@sha256:072c067d25ccbe61d46e18f0d0723255f2bb5304f7317caa95b27031520ff92c
-    container_name: web-cloudflared
     restart: unless-stopped
+    logging: *default-logging
     command: tunnel run
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:?Set TUNNEL_TOKEN in .env}
@@ -84,8 +94,8 @@ services:
 
   portainer:
     image: portainer/portainer-ce:2.45.1@sha256:4d616db18cfeb5dd41a69c0958bc825c84483ea9cde1106eb82a5d26f3bd8b0e
-    container_name: portainer
     restart: unless-stopped
+    logging: *default-logging
     environment:
       AGENT_SECRET: ${AGENT_SECRET:?Set AGENT_SECRET in .env}
     volumes:

@@ -33,10 +33,17 @@ repos:
 
   - repo: local
     hooks:
+      - id: caddy-check
+        name: format and validate Caddy configs
+        entry: scripts/check-caddy.sh
+        language: system
+        pass_filenames: false
+        files: (^|/)(Caddyfile|caddy/Dockerfile|check-caddy\.sh)$
+
       - id: compose-config
         name: validate Docker Compose stacks
         entry: scripts/check-docker-compose.sh
         language: system
         pass_filenames: false
         stages: [pre-push]
-        files: (^|/)(docker-compose\.ya?ml|\.env\.example|check-docker-compose\.sh)$
+        files: (^|/)(compose\.ya?ml|\.env\.example|check-docker-compose\.sh)$
