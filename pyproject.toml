@@ -1,0 +1,11 @@
+[project]
+name = "homelab-dev-workspace"
+version = "0.0.0"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = ["pre-commit==4.6.2"]
+
+[tool.uv]
+package = false
