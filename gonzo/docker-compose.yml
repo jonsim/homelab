@@ -4,7 +4,7 @@ services:
     container_name: web-caddy
     restart: unless-stopped
     environment:
-      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?Set CLOUDFLARE_API_TOKEN in .env}
     ports:
       - "80:80"
       - "443:443"
@@ -24,10 +24,10 @@ services:
     volumes:
       - ./www:/var/www/html
     environment:
-      - MYSQL_HOST=db
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      MYSQL_HOST: db
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?Set MYSQL_DATABASE in .env}
+      MYSQL_USER: ${MYSQL_USER:?Set MYSQL_USER in .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
     depends_on:
       - db
     networks:
@@ -38,10 +38,10 @@ services:
     container_name: web-db
     restart: unless-stopped
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?Set MYSQL_DATABASE in .env}
+      MYSQL_USER: ${MYSQL_USER:?Set MYSQL_USER in .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
     volumes:
       - db_data:/var/lib/mysql
     networks:
@@ -53,7 +53,7 @@ services:
     restart: unless-stopped
     command: tunnel run
     environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?Set TUNNEL_TOKEN in .env}
     depends_on:
       - caddy
     networks:
