@@ -35,8 +35,8 @@ repos:
     hooks:
       - id: compose-config
         name: validate Docker Compose stacks
-        entry: ./.pre-commit-check-compose.sh
+        entry: scripts/check-docker-compose.sh
         language: system
         pass_filenames: false
         stages: [pre-push]
-        files: (^|/)(docker-compose\.ya?ml|\.env\.example|check-compose\.sh)$
+        files: (^|/)(docker-compose\.ya?ml|\.env\.example|check-docker-compose\.sh)$

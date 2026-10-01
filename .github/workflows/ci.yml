@@ -38,7 +38,7 @@ jobs:
         run: uv run pre-commit run --all-files --show-diff-on-failure
 
       - name: Validate Docker Compose stacks
-        run: ./.pre-commit-check-compose.sh
+        run: ./scripts/check-docker-compose.sh
 
       - name: Validate the Ansible playbook
         run: uv run ansible-playbook ansible/deploy.yml --syntax-check
