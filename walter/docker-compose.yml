@@ -20,3 +20,9 @@ services:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - /mnt/user/appdata/caddy/data:/data
       - /mnt/user/appdata/caddy/config:/config
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

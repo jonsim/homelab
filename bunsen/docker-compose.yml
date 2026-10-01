@@ -8,6 +8,12 @@ services:
     network_mode: host
     privileged: true
     stop_grace_period: 60s
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--max-time", "10", "http://127.0.0.1:8123/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
     environment:
       TZ: ${TZ:-Europe/London}
     volumes:
@@ -30,8 +36,15 @@ services:
       - ./caddy:/etc/caddy:ro
       - caddy_data:/data
       - caddy_config:/config
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     depends_on:
-      - homeassistant
+      homeassistant:
+        condition: service_healthy
 
   portainer-agent:
     image: portainer/agent:2.45.1@sha256:38bc1dc7b8470eecbd979d444aa5d0a187dacf1245f2b54466f0f25f4c6d9a7c
