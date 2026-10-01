@@ -34,7 +34,7 @@ services:
       - webnet
 
   db:
-    image: mariadb:11
+    image: mariadb:11.8.9@sha256:79d59758afc91b89b120b0a8904d637f5a3b3e1c4900f29b740d6d46c72fef68
     container_name: web-db
     restart: unless-stopped
     environment:
@@ -48,7 +48,7 @@ services:
       - webnet
 
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.9.3@sha256:072c067d25ccbe61d46e18f0d0723255f2bb5304f7317caa95b27031520ff92c
     container_name: web-cloudflared
     restart: unless-stopped
     command: tunnel run
@@ -60,7 +60,7 @@ services:
       - webnet
 
   portainer:
-    image: portainer/portainer-ce:lts
+    image: portainer/portainer-ce:2.45.1@sha256:4d616db18cfeb5dd41a69c0958bc825c84483ea9cde1106eb82a5d26f3bd8b0e
     container_name: portainer
     restart: unless-stopped
     volumes:

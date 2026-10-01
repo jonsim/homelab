@@ -2,7 +2,7 @@ name: bunsen
 
 services:
   homeassistant:
-    image: ghcr.io/home-assistant/home-assistant:${HOME_ASSISTANT_VERSION:-2026.9.4}
+    image: ghcr.io/home-assistant/home-assistant:2026.9.4@sha256:3e6710a7ab2a61311d9d899b719f6c3657791c63e8f4942cec4ebc42401d6b76
     container_name: bunsen-homeassistant
     restart: unless-stopped
     network_mode: host
@@ -18,8 +18,6 @@ services:
   caddy:
     build:
       context: ./caddy
-      args:
-        CADDY_VERSION: ${CADDY_VERSION:-2.11.4}
     container_name: bunsen-caddy
     restart: unless-stopped
     network_mode: host
@@ -36,7 +34,7 @@ services:
       - homeassistant
 
   portainer-agent:
-    image: portainer/agent:lts
+    image: portainer/agent:2.45.1@sha256:38bc1dc7b8470eecbd979d444aa5d0a187dacf1245f2b54466f0f25f4c6d9a7c
     container_name: bunsen-portainer-agent
     restart: unless-stopped
     # If Gonzo's Portainer Server uses AGENT_SECRET, uncomment these lines and

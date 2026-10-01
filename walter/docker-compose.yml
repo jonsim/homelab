@@ -1,6 +1,6 @@
 services:
   portainer-agent:
-    image: portainer/agent:lts
+    image: portainer/agent:2.45.1@sha256:38bc1dc7b8470eecbd979d444aa5d0a187dacf1245f2b54466f0f25f4c6d9a7c
     container_name: walter-portainer-agent
     restart: unless-stopped
     ports:
