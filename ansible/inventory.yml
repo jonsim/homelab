@@ -4,13 +4,13 @@ all:
       hosts:
         bunsen:
           stack_source: muppets/bunsen
-          stack_path: "{{ ansible_env.HOME }}"
+          stack_path: /home/homeassistant
           stack_rsync_excludes:
             - --exclude=.env
             - --exclude=homeassistant/config/
         gonzo:
           stack_source: muppets/gonzo
-          stack_path: "{{ ansible_env.HOME }}"
+          stack_path: /home/jon
           stack_rsync_excludes:
             - --exclude=.env
             - --exclude=www/

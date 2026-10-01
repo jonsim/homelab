@@ -53,9 +53,9 @@ docker compose config --quiet
 
 ## Deploy a stack
 
-Deployment uses Ansible over SSH. Each target needs Python 3, `rsync`, Docker
-with the Compose plugin, a configured `.env` file at the deployment path, and a
-matching SSH host alias.
+Deployment uses Ansible over SSH without requiring Python on the target. Each
+target needs an SSH server, `rsync`, Docker with the Compose plugin, a
+configured `.env` file at the deployment path, and a matching SSH host alias.
 
 Install the pinned Ansible collection:
 
@@ -66,7 +66,7 @@ uv run ansible-galaxy collection install -r ansible/requirements.yml
 Check connectivity and preview a deployment:
 
 ```sh
-uv run ansible homelab -m ping
+uv run ansible homelab -m raw -a 'printf pong'
 uv run ansible-playbook ansible/deploy.yml --check --diff --limit gonzo
 ```
 
