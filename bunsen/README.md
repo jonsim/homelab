@@ -1,8 +1,10 @@
 # Bunsen Home Assistant stack
 
-This stack runs Home Assistant Container and Caddy on the Raspberry Pi 5 named
-`bunsen`. Caddy obtains and renews a publicly trusted certificate using a
-Cloudflare DNS-01 challenge, then proxies HTTPS traffic to Home Assistant.
+This stack runs Home Assistant Container, Caddy and a Portainer Agent on the
+Raspberry Pi 5 named `bunsen`. Caddy obtains and renews a publicly trusted
+certificate using a Cloudflare DNS-01 challenge, then proxies HTTPS traffic to
+Home Assistant. The Portainer Agent lets the Portainer Server on Gonzo manage
+Bunsen's Docker engine.
 
 Both services use host networking. Home Assistant therefore retains LAN device
 discovery, while Caddy can reach it at `127.0.0.1:8123`. Caddy publishes TCP
@@ -14,6 +16,7 @@ ports 80 and 443, plus UDP 443 for HTTP/3, directly on the host.
 - Docker Engine 23 or later with Docker Compose
 - D-Bus and BlueZ on the host if Home Assistant will use Bluetooth
 - Nothing else listening on TCP 80 or TCP/UDP 443
+- TCP 9001 reachable from Gonzo, but not from the Internet
 
 The Home Assistant container is privileged, matching Home Assistant's general
 Raspberry Pi container guidance and allowing attached radios to be discovered.
@@ -79,6 +82,36 @@ Home Assistant should then be available at the HTTPS URL configured by
 `HA_DOMAIN`. Port 8123 remains available on the trusted LAN as an emergency
 fallback.
 
+## Connect Portainer on Gonzo
+
+The Portainer Agent publishes TCP 9001 on Bunsen. It speaks HTTPS itself and is
+not routed through Caddy. After starting the stack, open Portainer on Gonzo and
+go to **Environments > Add environment > Docker Standalone > Agent**. Use:
+
+- Name: `bunsen`
+- Environment address: `bunsen.home.jonsim.com:9001` or Bunsen's LAN IP and
+  port 9001
+
+Do not include `http://` or `https://` in the environment address. The initial
+agent claim must be completed within five minutes of the agent starting. If it
+times out before it is claimed, restart it with:
+
+```sh
+docker compose restart portainer-agent
+```
+
+The agent's Docker socket mount grants Portainer full control of Bunsen. Do not
+forward port 9001 from the router; ideally restrict it in the host or LAN
+firewall so only Gonzo can connect. If Gonzo's Portainer Server is configured
+with an `AGENT_SECRET`, uncomment the matching environment block in
+`docker-compose.yml` and put the same value in Bunsen's `.env` before starting
+the agent.
+
+The volume mount assumes Docker stores named volumes in
+`/var/lib/docker/volumes`. Confirm Bunsen's Docker root with
+`docker info --format '{{.DockerRootDir}}'` and adjust the left side of that
+mount if it has been changed.
+
 ## Operations
 
 Validate the Compose model:
@@ -91,7 +124,7 @@ View status and recent logs:
 
 ```sh
 docker compose ps
-docker compose logs --tail=100 homeassistant caddy
+docker compose logs --tail=100 homeassistant caddy portainer-agent
 ```
 
 Reload Caddy after editing `caddy/Caddyfile`:
@@ -114,6 +147,14 @@ To update Caddy, change `CADDY_VERSION`, rebuild, and recreate it:
 ```sh
 docker compose build --pull caddy
 docker compose up -d caddy
+```
+
+Keep the Portainer Agent on the same version as the Portainer Server. Update the
+server on Gonzo first, then recreate the agent:
+
+```sh
+docker compose pull portainer-agent
+docker compose up -d portainer-agent
 ```
 
 Back up `homeassistant/config` and the `bunsen_caddy_data` Docker volume. The

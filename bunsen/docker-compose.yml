@@ -35,6 +35,20 @@ services:
     depends_on:
       - homeassistant
 
+  portainer-agent:
+    image: portainer/agent:lts
+    container_name: bunsen-portainer-agent
+    restart: unless-stopped
+    # If Gonzo's Portainer Server uses AGENT_SECRET, uncomment these lines and
+    # set the identical value in Bunsen's .env file.
+    # environment:
+    #   AGENT_SECRET: ${AGENT_SECRET:?Set AGENT_SECRET in .env}
+    ports:
+      - "9001:9001"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+
 volumes:
   caddy_data:
   caddy_config:
