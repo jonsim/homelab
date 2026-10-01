@@ -7,6 +7,8 @@ stack, environment template and notes.
 
 ## Hosts
 
+- `kermit` - router:
+  - _Not docker_
 - `bunsen` - HA server:
   - Home Assistant
   - Caddy
