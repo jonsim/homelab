@@ -3,19 +3,19 @@ all:
     homelab:
       hosts:
         bunsen:
-          stack_source: bunsen
+          stack_source: muppets/bunsen
           stack_path: "{{ ansible_env.HOME }}"
           stack_rsync_excludes:
             - --exclude=.env
             - --exclude=homeassistant/config/
         gonzo:
-          stack_source: gonzo
+          stack_source: muppets/gonzo
           stack_path: "{{ ansible_env.HOME }}"
           stack_rsync_excludes:
             - --exclude=.env
             - --exclude=www/
         walter:
-          stack_source: walter
+          stack_source: muppets/walter
           stack_path: /mnt/user/appdata
           stack_rsync_excludes:
             - --exclude=.env

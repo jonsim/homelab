@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-stacks=(bunsen gonzo walter)
+stacks=(muppets/bunsen muppets/gonzo muppets/walter)
 
 for stack in "${stacks[@]}"; do
     echo "Validating ${stack}/docker-compose.yml"

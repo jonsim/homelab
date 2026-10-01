@@ -2,8 +2,8 @@
 
 Infrastructure as code for my homelab Docker stacks.
 
-Each host has its own directory containing its Docker Compose stack,
-environment template and notes.
+Each host has its own directory under `muppets/` containing its Docker Compose
+stack, environment template and notes.
 
 ## Hosts
 
@@ -47,7 +47,7 @@ mode `0600`, and are never synchronized back into the repository.
 Run Docker Compose validation from the host directory:
 
 ```sh
-cd <host>
+cd muppets/<host>
 docker compose config --quiet
 ```
 
