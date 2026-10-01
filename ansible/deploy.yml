@@ -1,0 +1,84 @@
+---
+- name: Deploy homelab Docker stacks
+  hosts: homelab
+  gather_facts: true
+  serial: 1
+
+  tasks:
+    - name: Synchronize the stack definition
+      ansible.posix.synchronize:
+        src: "{{ playbook_dir }}/../{{ stack_source }}/"
+        dest: "{{ stack_path }}/"
+        archive: true
+        compress: true
+        delete: false
+        rsync_opts: "{{ stack_rsync_excludes }}"
+
+    - name: Check the deployment environment file
+      ansible.builtin.stat:
+        path: "{{ stack_path }}/.env"
+      register: stack_env
+
+    - name: Create the initial host-local environment file
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../{{ stack_source }}/.env.example"
+        dest: "{{ stack_path }}/.env"
+        force: false
+        mode: "0600"
+      when: not stack_env.stat.exists
+
+    - name: Require the initial environment file to be configured
+      ansible.builtin.fail:
+        msg: >-
+          Created {{ stack_path }}/.env on {{ inventory_hostname }}. Replace
+          every placeholder secret and address, then run this playbook again.
+      when: not stack_env.stat.exists
+
+    - name: Validate the Docker Compose model
+      ansible.builtin.command:
+        argv: [docker, compose, config, --quiet]
+        chdir: "{{ stack_path }}"
+      changed_when: false
+
+    - name: Pull service images
+      ansible.builtin.command:
+        argv: [docker, compose, pull, --quiet]
+        chdir: "{{ stack_path }}"
+      register: compose_pull
+      changed_when: "'Pulled' in compose_pull.stderr or 'Downloaded' in compose_pull.stderr"
+
+    - name: Build custom service images
+      ansible.builtin.command:
+        argv: [docker, compose, build, --pull]
+        chdir: "{{ stack_path }}"
+      register: compose_build
+      changed_when: "'exporting to image' in compose_build.stdout or 'exporting to image' in compose_build.stderr"
+
+    - name: Reconcile the Docker Compose stack
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - up
+          - --detach
+          - --remove-orphans
+          - --wait
+          - --wait-timeout
+          - "300"
+        chdir: "{{ stack_path }}"
+      register: compose_up
+      changed_when: >-
+        'Created' in compose_up.stderr or
+        'Recreated' in compose_up.stderr or
+        'Started' in compose_up.stderr
+
+    - name: Show the deployed service state
+      ansible.builtin.command:
+        argv: [docker, compose, ps]
+        chdir: "{{ stack_path }}"
+      changed_when: false
+      register: compose_ps
+
+    - name: Report the deployed service state
+      ansible.builtin.debug:
+        var: compose_ps.stdout_lines

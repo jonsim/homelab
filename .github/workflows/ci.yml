@@ -31,8 +31,14 @@ jobs:
       - name: Install development tools
         run: uv sync --locked
 
+      - name: Install Ansible collections
+        run: uv run ansible-galaxy collection install -r ansible/requirements.yml
+
       - name: Run pre-commit checks
         run: uv run pre-commit run --all-files --show-diff-on-failure
 
       - name: Validate Docker Compose stacks
         run: ./.pre-commit-check-compose.sh
+
+      - name: Validate the Ansible playbook
+        run: uv run ansible-playbook ansible/deploy.yml --syntax-check

@@ -22,11 +22,8 @@ Walter's Docker engine. Both run on Unraid's built-in Docker engine.
 
 ## Deploy from the repo
 
-Copy the `walter` directory to a persistent location on Walter, for example
-`/mnt/user/appdata/stacks/walter`. On Walter, from that directory:
-
-If using the repo's `deploy-walter.sh` script instead, it copies the contents
-directly to `/mnt/user/appdata`, so run these commands from there.
+Ansible deploys the `walter` directory to `/mnt/user/appdata`. On Walter, from
+that directory:
 
 ```sh
 cp .env.example .env

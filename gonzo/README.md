@@ -19,14 +19,15 @@ rpi-web-stack/
    ```
    Log out and back in for the group change to apply.
 
-2. Copy this whole `rpi-web-stack` folder to the Pi (scp, git, USB — whatever's easiest).
+2. From the repository root on the control machine, run
+   `uv run ansible-playbook ansible/deploy.yml --limit gonzo`. On the first
+   run Ansible creates `~/.env` and stops so it can be configured.
 
 3. Put your site files (the ones you downloaded from cPanel) into `www/`.
 
-4. Copy the env file and edit it:
+4. Edit the host-local environment file:
    ```
-   cp .env.example .env
-   nano .env
+   nano ~/.env
    ```
    Fill in real database credentials. Generate a high-entropy `AGENT_SECRET`
    and use that same value for the Portainer agents on Bunsen and Walter. Leave

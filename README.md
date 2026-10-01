@@ -26,10 +26,8 @@ recovery instructions.
 
 ## Set up the project
 
-Install [uv](https://docs.astral.sh/uv/), `docker` and `docker-compose`.
-
-
-Sync the remainder of the repositories dependencies:
+Install [uv](https://docs.astral.sh/uv/) and Docker with the Compose plugin.
+Sync the repository's development dependencies:
 
 ```sh
 uv sync
@@ -41,13 +39,8 @@ Install the pre-commit hooks:
 uv run pre-commit install
 ```
 
-The real environment files contain secrets and are not committed. Copy the
-relevant template before configuring a host:
-
-```sh
-cp <host>/.env.example <host>/.env
-chmod 600 <host>/.env
-```
+The real environment files contain secrets, remain on their target hosts with
+mode `0600`, and are never synchronized back into the repository.
 
 ## Validate a stack
 
@@ -60,16 +53,36 @@ docker compose config --quiet
 
 ## Deploy a stack
 
-The deployment scripts copy the tracked configuration to their corresponding
-hosts over SSH:
+Deployment uses Ansible over SSH. Each target needs Python 3, `rsync`, Docker
+with the Compose plugin, a configured `.env` file at the deployment path, and a
+matching SSH host alias.
+
+Install the pinned Ansible collection:
 
 ```sh
-./deploy-bunsen.sh
-./deploy-gonzo.sh
-./deploy-walter.sh
+uv run ansible-galaxy collection install -r ansible/requirements.yml
 ```
 
-Review the destination host's README before deploying.
+Check connectivity and preview a deployment:
+
+```sh
+uv run ansible homelab -m ping
+uv run ansible-playbook ansible/deploy.yml --check --diff --limit gonzo
+```
+
+Deploy one host after reviewing its README:
+
+```sh
+uv run ansible-playbook ansible/deploy.yml --limit gonzo
+```
+
+On a host's first deployment, Ansible creates `.env` from `.env.example` with
+mode `0600` and stops. Edit every placeholder on that host, then rerun the same
+command.
+
+Omit `--limit` to deploy all hosts serially. Ansible preserves host-local
+secrets and application data, validates the Compose model, pulls and builds
+images, reconciles the stack, and waits for its health checks.
 
 ## Security model
 
