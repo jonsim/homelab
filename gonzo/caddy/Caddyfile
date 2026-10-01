@@ -1,4 +1,4 @@
-portainer.gonzo.home.jonsim.com {
+portainer.home.jonsim.com {
 	tls {
 		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
 	}

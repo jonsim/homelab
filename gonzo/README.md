@@ -32,7 +32,7 @@ rpi-web-stack/
    created the Cloudflare tunnel yet — just start the stack without cloudflared
    running (`docker compose up -d nginx php db`) and add it later.
 
-5. Ensure local DNS resolves `portainer.gonzo.home.jonsim.com` to Gonzo's LAN
+5. Ensure local DNS resolves `portainer.home.jonsim.com` to Gonzo's LAN
    address, then validate and bring the stack up:
    ```
    docker compose config --quiet
@@ -40,7 +40,7 @@ rpi-web-stack/
    ```
 
    Portainer is included in the stack and is available at
-   `https://portainer.gonzo.home.jonsim.com`. Caddy terminates HTTPS using a
+   `https://portainer.home.jonsim.com`. Caddy terminates HTTPS using a
    publicly trusted certificate obtained with a Cloudflare DNS-01 challenge.
    Create the initial administrator account, then select the local Docker
    environment.
