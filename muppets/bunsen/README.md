@@ -21,7 +21,10 @@ ports 80 and 443, plus UDP 443 for HTTP/3, directly on the host.
 The Home Assistant container is privileged, matching Home Assistant's general
 Raspberry Pi container guidance and allowing attached radios to be discovered.
 Inside Home Assistant, prefer stable device paths under `/dev/serial/by-id/`
-when configuring USB Zigbee or Z-Wave controllers.
+when configuring USB Zigbee or Z-Wave controllers. The Sonoff Zigbee
+coordinator is mapped into the container at its existing persistent path so
+the restored ZHA configuration remains valid. Ensure the USB radio is connected
+before creating the Home Assistant container.
 
 ## Configure the stack
 
@@ -59,6 +62,14 @@ kit key. The restored configuration is stored in `homeassistant/config`.
 
 After the restore, check radios, integrations, entities and automations using
 the direct port 8123 address before introducing the reverse proxy.
+
+For a restored ZHA configuration, confirm that its persistent serial path is
+visible both on the host and in the container:
+
+```sh
+ls -l /dev/serial/by-id/
+docker compose exec homeassistant ls -l /dev/serial/by-id/
+```
 
 ## Enable the TLS proxy
 

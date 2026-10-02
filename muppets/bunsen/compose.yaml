@@ -22,6 +22,9 @@ services:
       start_period: 90s
     environment:
       TZ: ${TZ:-Europe/London}
+    devices:
+      # Keep the restored ZHA radio path stable inside the container.
+      - /dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20231101115132-if00:/dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20231101115132-if00
     volumes:
       - ./homeassistant/config:/config
       - /etc/localtime:/etc/localtime:ro
