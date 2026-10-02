@@ -82,3 +82,6 @@ rpi-web-stack/
 - Portainer configuration persists in the `portainer_data` Docker volume.
   Avoid `docker compose down -v` unless you intend to delete both Portainer
   configuration and the database volume.
+- The volumes retain their historical `jon_*` Docker names so deployments made
+  before the Compose project was explicitly named continue using the existing
+  database, Caddy and Portainer data.

@@ -34,7 +34,7 @@ sops edit muppets/bunsen/secrets.sops.env
 Set a Cloudflare API token. Restrict the token to the
 `jonsim.com` zone and grant only `Zone:Read` and `DNS:Edit`. Change `HA_DOMAIN`
 if the default `homeassistant.home.jonsim.com` name is not desired. Deploying
-through Ansible decrypts this file and installs `/home/homeassistant/.env` on
+through Ansible decrypts this file and installs `/home/jon/homeassistant/.env` on
 Bunsen with mode `0600`.
 
 Make local DNS resolve `HA_DOMAIN` to Bunsen's LAN address. DNS-01 proves
@@ -100,9 +100,9 @@ docker compose restart portainer-agent
 
 The agent's Docker socket mount grants Portainer root-equivalent control of
 Bunsen. Set `AGENT_SECRET` to the same high-entropy value used by Gonzo's
-Portainer Server and Walter's agent. Set `PORTAINER_AGENT_BIND_ADDRESS` to
-Bunsen's LAN address, and restrict TCP 9001 at the host or network firewall so
-only Gonzo can connect. Never forward port 9001 from the router.
+Portainer Server and Walter's agent. The agent listens on TCP 9001 on the
+host's interfaces; restrict that port at the host or network firewall so only
+Gonzo can connect. Never forward port 9001 from the router.
 
 The volume mount assumes Docker stores named volumes in
 `/var/lib/docker/volumes`. Confirm Bunsen's Docker root with

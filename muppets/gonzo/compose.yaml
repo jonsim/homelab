@@ -111,5 +111,9 @@ networks:
 
 volumes:
   caddy_data:
+    # Preserve data created before the Compose project was explicitly named.
+    name: jon_caddy_data
   db_data:
+    name: jon_db_data
   portainer_data:
+    name: jon_portainer_data

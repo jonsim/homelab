@@ -41,19 +41,28 @@
       ansible.builtin.assert:
         that:
           - "'replace_with_' not in stack_environment"
-          - "'192.0.2.' not in stack_environment"
         fail_msg: >-
           {{ stack_source }}/secrets.sops.env still contains example values.
           Edit it with SOPS before deploying.
 
     - name: Check the remote deployment prerequisites
-      ansible.builtin.raw: >-
-        command -v rsync >/dev/null &&
-        command -v docker >/dev/null &&
-        command -v base64 >/dev/null &&
-        command -v sha256sum >/dev/null &&
-        command -v awk >/dev/null &&
-        docker compose version >/dev/null
+      ansible.builtin.raw: |
+        missing=""
+        for prerequisite in rsync docker base64 sha256sum awk; do
+          if ! command -v "$prerequisite" >/dev/null 2>&1; then
+            missing="${missing} ${prerequisite}"
+          fi
+        done
+        if command -v docker >/dev/null 2>&1 && ! docker compose version >/dev/null 2>&1; then
+          missing="${missing} docker-compose-plugin"
+        fi
+        if command -v docker >/dev/null 2>&1 && ! docker info >/dev/null 2>&1; then
+          missing="${missing} docker-daemon-access"
+        fi
+        if test -n "$missing"; then
+          echo "Missing deployment prerequisites:${missing}" >&2
+          exit 1
+        fi
       changed_when: false
       check_mode: false
 
@@ -94,25 +103,29 @@
 
     - name: Validate the Docker Compose model
       ansible.builtin.raw: >-
-        cd {{ stack_path | quote }} && docker compose config --quiet
+        cd {{ stack_path | quote }} &&
+        docker compose --ansi never --progress plain config --quiet
       changed_when: false
 
     - name: Pull service images
       ansible.builtin.raw: >-
-        cd {{ stack_path | quote }} && docker compose pull --quiet
+        cd {{ stack_path | quote }} &&
+        docker compose --ansi never --progress plain pull --quiet
       register: compose_pull
       changed_when: "'Pulled' in compose_pull.stderr or 'Downloaded' in compose_pull.stderr"
 
     - name: Build custom service images
       ansible.builtin.raw: >-
-        cd {{ stack_path | quote }} && docker compose build --pull
+        cd {{ stack_path | quote }} &&
+        docker compose --ansi never --progress plain build --pull
       register: compose_build
       changed_when: "'exporting to image' in compose_build.stdout or 'exporting to image' in compose_build.stderr"
 
     - name: Reconcile the Docker Compose stack
       ansible.builtin.raw: >-
         cd {{ stack_path | quote }} &&
-        docker compose up --detach --remove-orphans --wait --wait-timeout 300
+        docker compose --ansi never --progress plain up
+        --detach --remove-orphans --wait --wait-timeout 300
       register: compose_up
       changed_when: >-
         'Created' in compose_up.stderr or
@@ -121,7 +134,8 @@
 
     - name: Show the deployed service state
       ansible.builtin.raw: >-
-        cd {{ stack_path | quote }} && docker compose ps
+        cd {{ stack_path | quote }} &&
+        docker compose --ansi never --progress plain ps
       changed_when: false
       register: compose_ps
 

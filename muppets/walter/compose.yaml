@@ -14,7 +14,7 @@ services:
     environment:
       AGENT_SECRET: ${AGENT_SECRET:?Set AGENT_SECRET in .env}
     ports:
-      - "${PORTAINER_AGENT_BIND_ADDRESS:?Set PORTAINER_AGENT_BIND_ADDRESS in .env}:9001:9001"
+      - "9001:9001"
     volumes:
       # Root-equivalent host access required for Portainer management.
       - /var/run/docker.sock:/var/run/docker.sock
