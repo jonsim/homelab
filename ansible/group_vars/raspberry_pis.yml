@@ -7,10 +7,8 @@ bootstrap_unattended_upgrades: true
 
 base_packages:
   - ca-certificates
-  - coreutils
   - curl
   - gpg
-  - mawk
   - openssh-server
   - python3-apt
   - rsync

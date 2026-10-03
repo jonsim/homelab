@@ -10,7 +10,7 @@ Walter's Docker engine. Both run on Unraid's built-in Docker engine.
 
 - Unraid with its built-in Docker service enabled
 - SSH access for the deployment account with permission to run Docker
-- `rsync`, `base64`, `sha256sum` and `awk` available on the host
+- Python 3 and `rsync` available on the host
 - The Docker Compose plugin
 - Persistent storage available under `/mnt/user/appdata`
 - Nothing else listening on TCP 80 or TCP/UDP 443 after the WebGUI is moved

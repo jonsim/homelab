@@ -45,24 +45,18 @@
           {{ stack_source }}/secrets.sops.env still contains example values.
           Edit it with SOPS before deploying.
 
-    - name: Check the remote deployment prerequisites
-      ansible.builtin.raw: |
-        missing=""
-        for prerequisite in rsync docker base64 sha256sum awk; do
-          if ! command -v "$prerequisite" >/dev/null 2>&1; then
-            missing="${missing} ${prerequisite}"
-          fi
-        done
-        if command -v docker >/dev/null 2>&1 && ! docker compose version >/dev/null 2>&1; then
-          missing="${missing} docker-compose-plugin"
-        fi
-        if command -v docker >/dev/null 2>&1 && ! docker info >/dev/null 2>&1; then
-          missing="${missing} docker-daemon-access"
-        fi
-        if test -n "$missing"; then
-          echo "Missing deployment prerequisites:${missing}" >&2
-          exit 1
-        fi
+    - name: Check rsync on the target
+      ansible.builtin.command: rsync --version
+      changed_when: false
+      check_mode: false
+
+    - name: Check Docker daemon access
+      ansible.builtin.command: docker info
+      changed_when: false
+      check_mode: false
+
+    - name: Check the Docker Compose plugin
+      ansible.builtin.command: docker compose version
       changed_when: false
       check_mode: false
 
@@ -78,54 +72,38 @@
         rsync_opts: "{{ stack_rsync_excludes }}"
 
     - name: Install the decrypted deployment environment
-      ansible.builtin.raw: |
-        target={{ (stack_path ~ '/.env') | quote }}
-        expected={{ stack_environment | hash('sha256') | quote }}
-        if test -f "$target"; then
-          current=$(sha256sum "$target" | awk '{print $1}')
-        else
-          current=""
-        fi
-        if test "$current" != "$expected"; then
-          temporary="${target}.tmp.$$"
-          umask 077
-          printf '%s' {{ stack_environment | b64encode | quote }} | base64 --decode > "$temporary"
-          chmod 0600 "$temporary"
-          mv "$temporary" "$target"
-          echo environment-updated
-        else
-          chmod 0600 "$target"
-          echo environment-unchanged
-        fi
-      register: environment_install
-      changed_when: "'environment-updated' in environment_install.stdout"
+      ansible.builtin.copy:
+        content: "{{ stack_environment }}"
+        dest: "{{ stack_path }}/.env"
+        mode: "0600"
       no_log: true
 
     - name: Validate the Docker Compose model
-      ansible.builtin.raw: >-
-        cd {{ stack_path | quote }} &&
-        docker compose --ansi never --progress plain config --quiet
+      ansible.builtin.command: docker compose --ansi never --progress plain config --quiet
+      args:
+        chdir: "{{ stack_path }}"
       changed_when: false
 
     - name: Pull service images
-      ansible.builtin.raw: >-
-        cd {{ stack_path | quote }} &&
-        docker compose --ansi never --progress plain pull --quiet
+      ansible.builtin.command: docker compose --ansi never --progress plain pull --quiet
+      args:
+        chdir: "{{ stack_path }}"
       register: compose_pull
       changed_when: "'Pulled' in compose_pull.stderr or 'Downloaded' in compose_pull.stderr"
 
     - name: Build custom service images
-      ansible.builtin.raw: >-
-        cd {{ stack_path | quote }} &&
-        docker compose --ansi never --progress plain build --pull
+      ansible.builtin.command: docker compose --ansi never --progress plain build --pull
+      args:
+        chdir: "{{ stack_path }}"
       register: compose_build
       changed_when: "'exporting to image' in compose_build.stdout or 'exporting to image' in compose_build.stderr"
 
     - name: Reconcile the Docker Compose stack
-      ansible.builtin.raw: >-
-        cd {{ stack_path | quote }} &&
-        docker compose --ansi never --progress plain up
-        --detach --remove-orphans --wait --wait-timeout 300
+      ansible.builtin.command: >-
+        docker compose --ansi never --progress plain up --detach
+        --remove-orphans --wait --wait-timeout 300
+      args:
+        chdir: "{{ stack_path }}"
       register: compose_up
       changed_when: >-
         'Created' in compose_up.stderr or
@@ -133,9 +111,9 @@
         'Started' in compose_up.stderr
 
     - name: Show the deployed service state
-      ansible.builtin.raw: >-
-        cd {{ stack_path | quote }} &&
-        docker compose --ansi never --progress plain ps
+      ansible.builtin.command: docker compose --ansi never --progress plain ps
+      args:
+        chdir: "{{ stack_path }}"
       changed_when: false
       register: compose_ps
 

@@ -126,15 +126,17 @@ network-at-boot behaviour and screen blanking using
 The first successful bootstrap ends with an automatic reboot; Ansible waits for
 the host to return before finishing.
 
-Running bootstrap against Walter only validates the tools supplied by Unraid;
-it does not modify the Unraid operating system or Docker installation.
+Running bootstrap against Walter only validates Python, rsync and the tools
+supplied by Unraid; it does not modify the Unraid operating system or Docker
+installation.
 
 ## Deploy a stack
 
 Deployment uses Ansible over SSH. Bootstrap installs the Raspberry Pi
-dependencies; Unraid must already provide them. Targets do not need SOPS or an
-age key. The controller decrypts the host's `secrets.sops.env` in memory and
-atomically installs `.env` on the target with mode `0600`.
+dependencies; Unraid must already provide Python 3, rsync, Docker and the
+Compose plugin. Targets do not need SOPS or an age key. The controller decrypts
+the host's `secrets.sops.env` in memory and atomically installs `.env` on the
+target with mode `0600`.
 
 Install the pinned Ansible collection:
 

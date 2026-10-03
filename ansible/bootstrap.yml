@@ -59,27 +59,18 @@
 
 - name: Validate the Unraid bootstrap boundary
   hosts: unraid
-  gather_facts: false
+  gather_facts: true
   serial: 1
 
   tasks:
-    - name: Check Unraid deployment prerequisites
-      ansible.builtin.raw: |
-        missing=""
-        for prerequisite in rsync docker base64 sha256sum awk; do
-          if ! command -v "$prerequisite" >/dev/null 2>&1; then
-            missing="${missing} ${prerequisite}"
-          fi
-        done
-        if command -v docker >/dev/null 2>&1 && ! docker compose version >/dev/null 2>&1; then
-          missing="${missing} docker-compose-plugin"
-        fi
-        if test -n "$missing"; then
-          echo "Missing Unraid prerequisites:${missing}" >&2
-          exit 1
-        fi
+    - name: Check rsync on Unraid
+      ansible.builtin.command: rsync --version
       changed_when: false
 
     - name: Confirm Docker daemon access on Unraid
-      ansible.builtin.raw: docker info >/dev/null
+      ansible.builtin.command: docker info
+      changed_when: false
+
+    - name: Check the Docker Compose plugin on Unraid
+      ansible.builtin.command: docker compose version
       changed_when: false
