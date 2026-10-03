@@ -1,7 +1,8 @@
 # Scooter Docker stack
 
 Scooter is a Raspberry Pi used to display a Home Assistant dashboard. The
-dashboard itself is client-side; this stack supplies the standard host services:
+dashboard itself is client-side. Chromium starts in kiosk mode when the `jon`
+desktop session logs in, while Docker supplies the standard host services:
 Caddy and the Portainer Agent.
 
 Caddy serves a small status response at `https://scooter.home.jonsim.com` and
@@ -10,9 +11,15 @@ Portainer manage Scooter's Docker engine.
 
 ## Deploy from the repo
 
+Install Raspberry Pi OS with Desktop, enable desktop autologin for `jon`, and
+install Chromium. Both `chromium` and `chromium-browser` executable names are
+supported. The kiosk autostart entry is deployed to
+`/home/jon/.config/autostart/scooter-kiosk.desktop`.
+
 Make `scooter.home.jonsim.com` resolve to Scooter's LAN IP in local DNS. Do not
 forward ports 80, 443 or 9001 from the router. Configure the encrypted
-environment on the Ansible controller, then deploy:
+environment on the Ansible controller, including the full `KIOSK_URL` for the
+desired Home Assistant dashboard, then deploy:
 
 ```sh
 sops edit muppets/scooter/secrets.sops.env
@@ -28,6 +35,11 @@ docker compose config --quiet
 docker compose ps
 docker compose logs --tail=100 caddy portainer-agent
 ```
+
+Log out and back in, or reboot Scooter, to start the kiosk after its first
+deployment. To test it from the graphical desktop, run
+`/home/jon/kiosk/launch.sh`. Dashboard authentication remains in Chromium's
+profile, so Home Assistant may require one initial interactive sign-in.
 
 In Gonzo's Portainer, add a Docker Standalone Agent environment named
 `scooter` at `scooter.home.jonsim.com:9001` (or Scooter's LAN IP). Use the same
