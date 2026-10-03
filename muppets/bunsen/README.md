@@ -10,11 +10,14 @@ Both services use host networking. Home Assistant therefore retains LAN device
 discovery, while Caddy can reach it at `127.0.0.1:8123`. Caddy publishes TCP
 ports 80 and 443, plus UDP 443 for HTTP/3, directly on the host.
 
-## Host prerequisites
+## Requirements
 
-- A 64-bit Linux installation on the Raspberry Pi 5
-- Docker Engine 23 or later with Docker Compose
+- A Raspberry Pi 5 running 64-bit Raspberry Pi OS Lite
+- An SSH server and a `jon` account that can run Docker without `sudo`
+- `rsync`, `base64`, `sha256sum` and `awk` available on the host
+- Docker Engine 23 or later with the Docker Compose plugin
 - D-Bus and BlueZ on the host if Home Assistant will use Bluetooth
+- The configured Zigbee USB device present at the path in `compose.yaml`
 - Nothing else listening on TCP 80 or TCP/UDP 443
 - TCP 9001 reachable from Gonzo, but not from the Internet
 

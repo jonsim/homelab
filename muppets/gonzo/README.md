@@ -13,6 +13,15 @@ rpi-web-stack/
 
 ## Steps on the Pi
 
+### Requirements
+
+- A Raspberry Pi running 64-bit Raspberry Pi OS Lite
+- An SSH server and a `jon` account that can run Docker without `sudo`
+- `rsync`, `base64`, `sha256sum` and `awk` available on the host
+- Docker Engine with the Docker Compose plugin
+- Nothing else listening on TCP 80 or TCP/UDP 443
+- Enough persistent storage for the website, MariaDB and Portainer data
+
 1. Install Docker + Compose (if not already):
    ```
    curl -fsSL https://get.docker.com | sh

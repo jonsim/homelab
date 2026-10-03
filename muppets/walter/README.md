@@ -6,6 +6,16 @@ Walter's Docker engine. Both run on Unraid's built-in Docker engine.
 
 ## Before starting Caddy
 
+### Requirements
+
+- Unraid with its built-in Docker service enabled
+- SSH access for the deployment account with permission to run Docker
+- `rsync`, `base64`, `sha256sum` and `awk` available on the host
+- The Docker Compose plugin
+- Persistent storage available under `/mnt/user/appdata`
+- Nothing else listening on TCP 80 or TCP/UDP 443 after the WebGUI is moved
+- TCP 9001 reachable from Gonzo, but not from the Internet
+
 1. In Unraid, go to **Settings → Management Access**. Set **Use SSL/TLS** to
    **No** and change **HTTP port** from `80` to `8080`, then apply. Confirm
    `http://<walter-LAN-IP>:8080` works before deploying Caddy. Do not forward

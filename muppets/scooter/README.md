@@ -11,9 +11,19 @@ Portainer manage Scooter's Docker engine.
 
 ## Deploy from the repo
 
-Install Raspberry Pi OS with Desktop, enable desktop autologin for `jon`, and
-install Chromium. Both `chromium` and `chromium-browser` executable names are
-supported. The kiosk autostart entry is deployed to
+### Requirements
+
+- A Raspberry Pi running 64-bit Raspberry Pi OS with Desktop
+- Desktop autologin enabled for the `jon` account
+- Chromium installed as either `chromium-browser` or `chromium`
+- An SSH server and permission for `jon` to run Docker without `sudo`
+- `rsync`, `base64`, `sha256sum`, `awk` and `sed` available on the host
+- Docker Engine with the Docker Compose plugin
+- Nothing else listening on TCP 80 or TCP/UDP 443
+- TCP 9001 reachable from Gonzo, but not from the Internet
+- Local network access to the Home Assistant URL configured by `KIOSK_URL`
+
+The kiosk autostart entry is deployed to
 `/home/jon/.config/autostart/scooter-kiosk.desktop`.
 
 Make `scooter.home.jonsim.com` resolve to Scooter's LAN IP in local DNS. Do not
