@@ -4,6 +4,15 @@ Caddy serves the Unraid WebGUI at `https://walter.home.jonsim.com` using a
 Cloudflare DNS-01 certificate. The Portainer Agent lets Gonzo's Portainer manage
 Walter's Docker engine. Both run on Unraid's built-in Docker engine.
 
+## Storage layout
+
+- Four 4 TB HDDs form the Unraid array: two parity disks and two data disks,
+  providing about 8 TB usable capacity and protection against two HDD failures.
+- The `backup` and `media` shares live on the array, with no secondary storage.
+- The 256 GB NVMe is a single-device pool named `local`. The `appdata` and
+  `system` shares live there, with no secondary storage. This pool has no disk
+  redundancy and is not protected by the HDD parity disks.
+
 ## Before starting Caddy
 
 ### Requirements
@@ -18,6 +27,10 @@ Walter's Docker engine. Both run on Unraid's built-in Docker engine.
 
 `ansible/bootstrap.yml` validates these requirements but deliberately does not
 install or reconfigure packages managed by Unraid.
+Install **Python 3 for UNRAID** and **Compose Manager Plus** from Unraid's
+**Apps** tab, then confirm `python3 --version` and `docker compose version`
+work. Compose Manager Plus provides the Compose CLI plugin; Docker Engine
+alone does not include that command on Unraid.
 
 1. In Unraid, go to **Settings → Management Access**. Set **Use SSL/TLS** to
    **No** and change **HTTP port** from `80` to `8080`, then apply. Confirm
