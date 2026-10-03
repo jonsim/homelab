@@ -1,0 +1,11 @@
+[Unit]
+Description=Back up homelab data to Walter
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/homelab-backup
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

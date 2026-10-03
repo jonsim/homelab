@@ -173,6 +173,22 @@ docker compose pull portainer-agent
 docker compose up -d portainer-agent
 ```
 
-Back up `homeassistant/config` and the `bunsen_caddy_data` Docker volume. The
-latter contains Caddy's ACME account, certificates and private keys. Do not run
-`docker compose down -v` unless deleting that persistent data is intentional.
+The automated job backs up `homeassistant/config`. The `bunsen_caddy_data`
+volume contains regenerable ACME material and is intentionally excluded. Do
+not run `docker compose down -v` unless deleting persistent data is intentional.
+
+## Automated backup and recovery
+
+The shared backup play installs a 03:00 systemd timer which snapshots the whole
+`homeassistant/config` directory to Walter. Caddy certificates, Docker images,
+logs and the operating system are excluded because they can be rebuilt. The
+Home Assistant SQLite database is copied while Home Assistant is running, so
+this is intentionally crash-consistent rather than an application-consistent
+backup. Keep Home Assistant's own exports for especially important changes.
+
+After reinstalling Raspberry Pi OS, bootstrap and deploy Bunsen, stop Home
+Assistant, restore the chosen Restic snapshot into
+`/home/jon/homeassistant/homeassistant/config`, correct ownership if needed,
+then start Home Assistant and validate automations, integrations and radios.
+Use `sudo systemctl start homelab-backup.service` for a manual backup and
+`sudo journalctl -u homelab-backup.service` to inspect the result.

@@ -82,10 +82,72 @@ sops edit muppets/scooter/secrets.sops.env
 sops edit muppets/walter/secrets.sops.env
 ```
 
-Verify that only encrypted values are present, then commit `.sops.yaml` and the
-four `secrets.sops.env` files. Never commit the age identity. To give another
-controller or administrator access later, add its public recipient to the
-creation rule and use `sops updatekeys` on each encrypted file.
+Verify that only encrypted values are present, then commit `.sops.yaml`, the
+four stack `secrets.sops.env` files and `ansible/backup-secrets.sops.yml`. Never
+commit the age identity. To give another controller or administrator access
+later, add its public recipient to the creation rules and use `sops updatekeys`
+on each encrypted file.
+
+## Backups
+
+Every managed host backs up data and configuration to a separate encrypted
+Restic repository under Walter's `/mnt/user/backup` share. Kermit sends an
+encrypted OPNsense configuration export to Walter first. Jobs begin at 03:00
+Europe/London, retain 7 daily and 4 weekly snapshots, prune after successful
+backups and run an integrity check every Sunday.
+
+Backups on Walter protect the Raspberry Pis, Kermit's configuration, Walter's
+USB configuration and Walter's unprotected NVMe application data. They do not
+protect against total loss of Walter, its array, theft, fire or an operator who
+can destroy both source and backup storage. Add an off-site copy before treating
+this as a complete disaster-recovery strategy.
+
+Configure the central encrypted backup settings:
+
+```sh
+sops edit ansible/backup-secrets.sops.yml
+```
+
+Generate a unique HTTP password and Restic repository password for Bunsen,
+Gonzo and Scooter. Generate each matching bcrypt value with
+`htpasswd -nbB <host> '<http-password>'` and store only the value after the
+first colon in `http_password_hash`. Walter and Kermit use their repositories
+locally and need only repository passwords. Configure distinct success and
+failure healthcheck URLs for every host and keep all repository and Kermit
+export passwords in the password manager that holds the SOPS age identity.
+
+Make `backup.home.jonsim.com` resolve to Walter on the LAN and create the
+restricted `kermit-backup` SFTP account described in Kermit's README. Configure
+Walter's storage and credentials, deploy its stack, then install the Pi timers:
+
+```sh
+uv run ansible-playbook ansible/backup.yml --limit walter
+uv run ansible-playbook ansible/deploy.yml --limit walter
+uv run ansible-playbook ansible/backup.yml --limit raspberry_pis
+```
+
+Complete Kermit's SFTP setup as described in `muppets/kermit/README.md`, then
+run and verify one manual backup for every host. On a Pi:
+
+```sh
+sudo systemctl start homelab-backup.service
+sudo journalctl -u homelab-backup.service --since today
+sudo /usr/local/sbin/homelab-backup snapshots
+```
+
+On Walter:
+
+```sh
+cd /mnt/user/appdata
+docker compose exec backup-scheduler /usr/local/bin/run-backups run-now
+docker compose exec backup-scheduler /usr/local/bin/run-backups snapshots walter
+docker compose exec backup-scheduler /usr/local/bin/run-backups snapshots kermit
+docker compose logs --tail=100 backup-scheduler rest-server
+```
+
+Perform a representative restore from every repository during setup, and a
+sampled restore drill at least quarterly. A successful healthcheck proves that
+the job ran; it does not replace a restore test.
 
 ## Validate a stack
 

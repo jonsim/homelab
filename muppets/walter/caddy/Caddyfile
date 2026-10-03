@@ -5,3 +5,11 @@ walter.home.jonsim.com {
 
 	reverse_proxy 127.0.0.1:8080
 }
+
+backup.home.jonsim.com {
+	tls {
+		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+	}
+
+	reverse_proxy 127.0.0.1:8000
+}

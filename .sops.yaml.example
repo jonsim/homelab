@@ -1,0 +1,5 @@
+creation_rules:
+  - path_regex: ^ansible/backup-secrets\.sops\.yml$
+    age: AGE_RECIPIENT
+  - path_regex: ^muppets/[^/]+/secrets\.sops\.env$
+    age: AGE_RECIPIENT

@@ -22,6 +22,7 @@ Walter's Docker engine. Both run on Unraid's built-in Docker engine.
 - Python 3 and `rsync` available on the host
 - The Docker Compose plugin
 - Persistent storage available under `/mnt/user/appdata`
+- The `backup` share available at `/mnt/user/backup`
 - Nothing else listening on TCP 80 or TCP/UDP 443 after the WebGUI is moved
 - TCP 9001 reachable from Gonzo, but not from the Internet
 
@@ -89,3 +90,37 @@ Docker storage configuration.
 For future services on Walter, add another site block to `caddy/Caddyfile`
 and redeploy with `docker compose up -d --build`. The custom Caddy image is
 needed because the stock image does not include the Cloudflare DNS module.
+
+## Backup server and Walter recovery
+
+The stack also runs an authenticated Restic REST server at
+`https://backup.home.jonsim.com`. Its data is stored in one repository per host
+under `/mnt/user/backup`. The endpoint is intended only for the trusted LAN;
+make that hostname resolve to Walter locally and do not port-forward it.
+Authentication data is generated from the encrypted backup settings by
+`ansible/backup.yml`.
+
+The backup scheduler starts Walter and Kermit's workflows at 03:00
+Europe/London. Walter snapshots `/boot/config` and `/mnt/user/appdata`, excluding
+the backup scheduler's credentials and staging state, caches and logs. It never
+backs up `/mnt/user/backup`, Docker images or Docker engine state. Kermit's job
+requires an encrypted XML export newer than 30 minutes in the documented
+staging directory. Both repositories retain 7 daily and 4 weekly snapshots and
+are checked every Sunday.
+
+Run both jobs manually and inspect their logs with:
+
+```sh
+cd /mnt/user/appdata
+docker compose exec backup-scheduler /usr/local/bin/run-backups run-now
+docker compose exec backup-scheduler /usr/local/bin/run-backups snapshots walter
+docker compose exec backup-scheduler /usr/local/bin/run-backups snapshots kermit
+docker compose logs --tail=100 backup-scheduler rest-server
+```
+
+For complete Walter recovery, reinstall Unraid, restore `/boot/config` to the
+USB device, recreate the array without formatting its data disks, restore the
+chosen `appdata` snapshot to the `local` pool, deploy this stack and validate
+Docker services and shares. Repository passwords must come from the separate
+password-manager copy; a password stored only inside its own encrypted
+repository cannot be used to recover that repository.

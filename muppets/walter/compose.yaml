@@ -7,6 +7,21 @@ x-logging: &default-logging
     max-file: "3"
 
 services:
+  backup-scheduler:
+    build:
+      context: ./backup
+    restart: unless-stopped
+    logging: *default-logging
+    env_file:
+      - path: ./backup/backup.env
+        required: false
+    volumes:
+      - /boot/config:/source/walter/boot-config:ro
+      - /mnt/user/appdata:/source/walter/appdata:ro
+      - /mnt/user/appdata/homelab-backup/kermit-inbox:/source/kermit:ro
+      - /mnt/user/appdata/homelab-backup/scheduler-state:/state
+      - /mnt/user/backup:/repositories
+
   portainer-agent:
     image: portainer/agent:2.45.1@sha256:38bc1dc7b8470eecbd979d444aa5d0a187dacf1245f2b54466f0f25f4c6d9a7c
     restart: unless-stopped
@@ -38,3 +53,15 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  rest-server:
+    image: restic/rest-server:0.14.0-amd64@sha256:e117e428e511e3ffdeb6d0e578adf4b468803c77ad500993bb8f15038b2d9db3
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      OPTIONS: --private-repos
+    user: "99:100"
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - /mnt/user/backup:/data

@@ -5,6 +5,8 @@ all:
         raspberry_pis:
           hosts:
             bunsen:
+              backup_kind: bunsen
+              backup_restic_image: restic/restic:0.18.1-arm64@sha256:02c495b242672ce3229e2c63714036ce1df008a4bba39b6411455bda49b2259b
               stack_source: muppets/bunsen
               stack_path: /home/jon/homeassistant
               stack_rsync_excludes:
@@ -15,6 +17,8 @@ all:
                 - bluez
                 - dbus
             gonzo:
+              backup_kind: gonzo
+              backup_restic_image: restic/restic:0.18.1-arm64@sha256:02c495b242672ce3229e2c63714036ce1df008a4bba39b6411455bda49b2259b
               stack_source: muppets/gonzo
               stack_path: /home/jon
               stack_rsync_excludes:
@@ -22,15 +26,19 @@ all:
                 - --exclude=secrets.sops.env
                 - --exclude=www/
             scooter:
+              backup_kind: scooter
+              backup_restic_image: restic/restic:0.18.1-arm64@sha256:02c495b242672ce3229e2c63714036ce1df008a4bba39b6411455bda49b2259b
               stack_source: muppets/scooter
               stack_path: /home/jon
               stack_rsync_excludes:
                 - --exclude=.env
                 - --exclude=secrets.sops.env
+                - --exclude=backup/backup.env
               kiosk_enabled: true
         unraid:
           hosts:
             walter:
+              backup_kermit_sftp_user: kermit-backup
               stack_source: muppets/walter
               stack_path: /mnt/user/appdata
               stack_rsync_excludes:

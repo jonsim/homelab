@@ -1,0 +1,109 @@
+---
+- name: Configure Walter backup storage
+  hosts: walter
+  gather_facts: false
+
+  vars:
+    backup_secrets_file: "{{ playbook_dir }}/backup-secrets.sops.yml"
+
+  tasks:
+    - name: Check the encrypted backup secrets
+      ansible.builtin.stat:
+        path: "{{ backup_secrets_file }}"
+      delegate_to: localhost
+      register: backup_secrets_stat
+
+    - name: Require encrypted backup secrets
+      ansible.builtin.assert:
+        that: backup_secrets_stat.stat.isreg | default(false)
+        fail_msg: >-
+          Create ansible/backup-secrets.sops.yml from backup-secrets.example.yml,
+          encrypt it with SOPS, and configure every value before deployment.
+
+    - name: Decrypt backup secrets in memory
+      ansible.builtin.set_fact:
+        backup_secrets: >-
+          {{ lookup('community.sops.sops', backup_secrets_file, output_type='yaml') | from_yaml }}
+      no_log: true
+
+    - name: Require configured backup secrets
+      ansible.builtin.assert:
+        that:
+          - "'replace_with_' not in (backup_secrets | to_json)"
+          - backup_secrets.backup_domain == 'backup.home.jonsim.com'
+          - backup_secrets.backup_hosts.bunsen.http_password_hash is match('^\\$2[aby]\\$')
+          - backup_secrets.backup_hosts.gonzo.http_password_hash is match('^\\$2[aby]\\$')
+          - backup_secrets.backup_hosts.scooter.http_password_hash is match('^\\$2[aby]\\$')
+        fail_msg: Configure every backup secret and keep the documented backup hostname.
+      no_log: true
+
+    - name: Create backup server directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: nobody
+        group: users
+        mode: "0750"
+      loop:
+        - /mnt/user/backup
+        - /mnt/user/backup/bunsen
+        - /mnt/user/backup/gonzo
+        - /mnt/user/backup/kermit
+        - /mnt/user/backup/scooter
+        - /mnt/user/backup/walter
+        - /mnt/user/appdata/homelab-backup
+        - /mnt/user/appdata/homelab-backup/kermit-inbox
+        - /mnt/user/appdata/homelab-backup/scheduler-state
+        - /mnt/user/appdata/backup
+
+    - name: Install Rest server authentication database
+      ansible.builtin.copy:
+        content: |
+          bunsen:{{ backup_secrets.backup_hosts.bunsen.http_password_hash }}
+          gonzo:{{ backup_secrets.backup_hosts.gonzo.http_password_hash }}
+          scooter:{{ backup_secrets.backup_hosts.scooter.http_password_hash }}
+        dest: /mnt/user/backup/.htpasswd
+        owner: nobody
+        group: users
+        mode: "0640"
+      no_log: true
+
+    - name: Allow the restricted Kermit SFTP account to write its inbox
+      ansible.builtin.file:
+        path: /mnt/user/appdata/homelab-backup/kermit-inbox
+        state: directory
+        owner: "{{ backup_kermit_sftp_user }}"
+        group: users
+        mode: "0700"
+
+    - name: Install Walter backup environment
+      ansible.builtin.template:
+        src: roles/backup/templates/walter-backup.env.j2
+        dest: /mnt/user/appdata/backup/backup.env
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+- name: Configure Raspberry Pi backups
+  hosts: raspberry_pis
+  gather_facts: false
+  become: true
+
+  vars:
+    backup_secrets_file: "{{ playbook_dir }}/backup-secrets.sops.yml"
+
+  pre_tasks:
+    - name: Decrypt backup secrets in memory
+      ansible.builtin.set_fact:
+        backup_secrets: >-
+          {{ lookup('community.sops.sops', backup_secrets_file, output_type='yaml') | from_yaml }}
+      no_log: true
+
+    - name: Select this host's backup credentials
+      ansible.builtin.set_fact:
+        backup_host_secrets: "{{ backup_secrets.backup_hosts[inventory_hostname] }}"
+      no_log: true
+
+  roles:
+    - role: backup

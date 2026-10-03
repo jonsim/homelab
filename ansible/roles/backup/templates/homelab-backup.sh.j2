@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+readonly environment_file=/etc/homelab-backup.env
+readonly state_directory=/var/lib/homelab-backup
+readonly staging_directory=${state_directory}/staging
+readonly lock_file=${state_directory}/backup.lock
+
+source "$environment_file"
+
+notify() {
+    local url=$1
+    [[ -z $url ]] || curl --fail --silent --show-error --max-time 20 "$url" >/dev/null
+}
+
+failure() {
+    local status=$?
+    notify "$HEALTHCHECK_FAILURE_URL" || true
+    exit "$status"
+}
+trap failure ERR
+
+exec 9>"$lock_file"
+flock --nonblock 9 || exit 0
+mkdir -p "$staging_directory"
+
+restic() {
+    docker run --rm --network host \
+        --env RESTIC_REPOSITORY --env RESTIC_PASSWORD \
+        --env RESTIC_REST_USERNAME --env RESTIC_REST_PASSWORD \
+        --volume /home/jon:/source/home/jon:ro \
+        --volume /var/lib/docker/volumes:/source/docker-volumes:ro \
+        --volume "$staging_directory:/source/staging:ro" \
+        "$RESTIC_IMAGE" "$@"
+}
+
+if [[ ${1:-} == snapshots ]]; then
+    restic snapshots
+    exit
+fi
+
+if ! restic snapshots >/dev/null 2>&1; then
+    restic init
+fi
+
+case "$BACKUP_KIND" in
+    bunsen)
+        restic backup /source/home/jon/homeassistant/homeassistant/config --host "$BACKUP_HOST" --tag nightly
+        ;;
+    gonzo)
+        rm -f "$staging_directory/mariadb.sql.tmp"
+        docker compose --project-directory /home/jon exec --no-TTY db \
+            sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mariadb-dump --single-transaction --quick --all-databases -u root' \
+            >"$staging_directory/mariadb.sql.tmp"
+        mv "$staging_directory/mariadb.sql.tmp" "$staging_directory/mariadb.sql"
+        restic backup \
+            /source/home/jon/www \
+            /source/docker-volumes/jon_portainer_data/_data \
+            /source/staging/mariadb.sql \
+            --host "$BACKUP_HOST" --tag nightly
+        ;;
+    scooter)
+        restic backup /source/home/jon/.config/chromium \
+            --exclude='**/Cache/**' \
+            --exclude='**/Code Cache/**' \
+            --exclude='**/Crashpad/**' \
+            --exclude='**/GPUCache/**' \
+            --host "$BACKUP_HOST" --tag nightly
+        ;;
+    *)
+        echo "Unsupported backup kind: $BACKUP_KIND" >&2
+        exit 2
+        ;;
+esac
+
+restic forget --host "$BACKUP_HOST" --keep-daily 7 --keep-weekly 4 --prune
+if [[ $(date +%u) == 7 ]]; then
+    restic check
+fi
+
+rm -rf "$staging_directory"
+mkdir -p "$staging_directory"
+notify "$HEALTHCHECK_SUCCESS_URL"

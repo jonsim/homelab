@@ -28,15 +28,26 @@ for stack in muppets/bunsen muppets/gonzo muppets/scooter muppets/walter; do
     fi
 done
 
+if [[ -e ansible/backup-secrets.sops.yml ]]; then
+    echo "ansible/backup-secrets.sops.yml already exists; refusing to overwrite it." >&2
+    exit 1
+fi
+
 recipient=$1
 sed "s/AGE_RECIPIENT/${recipient}/" .sops.yaml.example > .sops.yaml
 
-for stack in muppets/*; do
+for stack in muppets/bunsen muppets/gonzo muppets/scooter muppets/walter; do
     encrypted_file="${stack}/secrets.sops.env"
     cp "${stack}/.env.example" "$encrypted_file"
     sops encrypt --in-place "$encrypted_file"
     echo "Created ${encrypted_file}"
 done
 
+
+cp ansible/backup-secrets.example.yml ansible/backup-secrets.sops.yml
+sops encrypt --in-place ansible/backup-secrets.sops.yml
+echo "Created ansible/backup-secrets.sops.yml"
+
 echo "Created .sops.yaml"
 echo "Edit each encrypted file with: sops edit muppets/<host>/secrets.sops.env"
+echo "Edit backup settings with: sops edit ansible/backup-secrets.sops.yml"

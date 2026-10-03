@@ -79,12 +79,27 @@ Docker Compose plugin, and grants `jon` Docker access.
   `portainer:9000` over the private `webnet` Docker network. The Docker socket
   mount gives Portainer root-equivalent control of the Docker host. Restrict
   Portainer administration to trusted users.
-- Database data persists in the `db_data` Docker volume even if you
-  recreate containers. Set up a cron `mysqldump` backup once things are
-  stable — that volume is now your only copy of the data.
+- Database data persists in the `db_data` Docker volume even if you recreate
+  containers. The automated backup described below creates the logical dump
+  used for recovery; do not treat the live volume as a backup.
 - Portainer configuration persists in the `portainer_data` Docker volume.
   Avoid `docker compose down -v` unless you intend to delete both Portainer
   configuration and the database volume.
 - The volumes retain their historical `jon_*` Docker names so deployments made
   before the Compose project was explicitly named continue using the existing
   database, Caddy and Portainer data.
+
+## Automated backup and recovery
+
+The 03:00 backup writes a transactional all-databases MariaDB dump, then
+snapshots that dump, `www` and the `jon_portainer_data` volume to Walter.
+MariaDB's live data volume, Docker images, logs and Caddy certificates are not
+copied. A failed dump leaves its staging data for diagnosis; the next successful
+run replaces and removes it.
+
+For recovery, bootstrap and deploy Gonzo, restore `www` and Portainer data from
+the chosen snapshot, then import `mariadb.sql` into the fresh MariaDB service.
+Recreate containers and validate the website, database and Portainer before
+enabling Cloudflare traffic. Run a backup manually with
+`sudo systemctl start homelab-backup.service` and inspect it with
+`sudo journalctl -u homelab-backup.service`.

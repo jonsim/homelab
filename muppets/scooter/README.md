@@ -55,3 +55,16 @@ In Gonzo's Portainer, add a Docker Standalone Agent environment named
 `scooter` at `scooter.home.jonsim.com:9001` (or Scooter's LAN IP). Use the same
 high-entropy `AGENT_SECRET` as the other Portainer agents. Restrict TCP 9001 to
 Gonzo on the LAN; access to the agent is equivalent to root access on Scooter.
+
+## Automated backup and recovery
+
+The nightly job snapshots Chromium's user profile, including its Home
+Assistant session, while excluding browser caches, GPU caches and crash data.
+The operating system, kiosk launcher, Compose stack and Caddy state are rebuilt
+from this repository and are not backed up.
+
+After reinstalling and bootstrapping Scooter, deploy the stack, stop Chromium,
+restore the selected profile under `/home/jon/.config/chromium`, correct its
+ownership to `jon`, and log in interactively if Home Assistant has invalidated
+the restored session. Use `sudo systemctl start homelab-backup.service` for a
+manual run and `sudo journalctl -u homelab-backup.service` for its log.
