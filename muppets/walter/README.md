@@ -16,6 +16,9 @@ Walter's Docker engine. Both run on Unraid's built-in Docker engine.
 - Nothing else listening on TCP 80 or TCP/UDP 443 after the WebGUI is moved
 - TCP 9001 reachable from Gonzo, but not from the Internet
 
+`ansible/bootstrap.yml` validates these requirements but deliberately does not
+install or reconfigure packages managed by Unraid.
+
 1. In Unraid, go to **Settings → Management Access**. Set **Use SSL/TLS** to
    **No** and change **HTTP port** from `80` to `8080`, then apply. Confirm
    `http://<walter-LAN-IP>:8080` works before deploying Caddy. Do not forward

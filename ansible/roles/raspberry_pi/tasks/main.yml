@@ -1,0 +1,5 @@
+---
+- name: Install Raspberry Pi host packages
+  ansible.builtin.apt:
+    name: "{{ ['raspi-config'] + (raspberry_pi_packages | default([])) }}"
+    state: present

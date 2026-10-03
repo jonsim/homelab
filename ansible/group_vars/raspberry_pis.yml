@@ -1,0 +1,25 @@
+---
+bootstrap_user: jon
+ansible_user: jon
+bootstrap_timezone: Europe/London
+bootstrap_upgrade_packages: true
+bootstrap_unattended_upgrades: true
+
+base_packages:
+  - ca-certificates
+  - coreutils
+  - curl
+  - gpg
+  - mawk
+  - openssh-server
+  - python3-apt
+  - rsync
+  - sed
+  - unattended-upgrades
+
+docker_packages:
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-ce
+  - docker-ce-cli
+  - docker-compose-plugin

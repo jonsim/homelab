@@ -14,17 +14,17 @@ Portainer manage Scooter's Docker engine.
 ### Requirements
 
 - A Raspberry Pi running 64-bit Raspberry Pi OS with Desktop
-- Desktop autologin enabled for the `jon` account
-- Chromium installed as either `chromium-browser` or `chromium`
-- An SSH server and permission for `jon` to run Docker without `sudo`
-- `rsync`, `base64`, `sha256sum`, `awk` and `sed` available on the host
-- Docker Engine with the Docker Compose plugin
+- An SSH server and a `jon` account with passwordless `sudo` for bootstrap
 - Nothing else listening on TCP 80 or TCP/UDP 443
 - TCP 9001 reachable from Gonzo, but not from the Internet
 - Local network access to the Home Assistant URL configured by `KIOSK_URL`
 
-The kiosk autostart entry is deployed to
-`/home/jon/.config/autostart/scooter-kiosk.desktop`.
+`ansible/bootstrap.yml` installs the host utilities, Docker Engine, the Docker
+Compose plugin and Chromium. It also enables desktop autologin for `jon`, waits
+for networking during boot and disables desktop screen blanking.
+
+Bootstrap installs the launcher at `/usr/local/bin/home-assistant-kiosk` and
+configures it in `/home/jon/.config/labwc/autostart`.
 
 Make `scooter.home.jonsim.com` resolve to Scooter's LAN IP in local DNS. Do not
 forward ports 80, 443 or 9001 from the router. Configure the encrypted
@@ -48,7 +48,7 @@ docker compose logs --tail=100 caddy portainer-agent
 
 Log out and back in, or reboot Scooter, to start the kiosk after its first
 deployment. To test it from the graphical desktop, run
-`/home/jon/kiosk/launch.sh`. Dashboard authentication remains in Chromium's
+`/usr/local/bin/home-assistant-kiosk`. Dashboard authentication remains in Chromium's
 profile, so Home Assistant may require one initial interactive sign-in.
 
 In Gonzo's Portainer, add a Docker Standalone Agent environment named

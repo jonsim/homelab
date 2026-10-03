@@ -1,30 +1,38 @@
 all:
   children:
     homelab:
-      hosts:
-        bunsen:
-          stack_source: muppets/bunsen
-          stack_path: /home/jon/homeassistant
-          stack_rsync_excludes:
-            - --exclude=.env
-            - --exclude=secrets.sops.env
-            - --exclude=homeassistant/config/
-        gonzo:
-          stack_source: muppets/gonzo
-          stack_path: /home/jon
-          stack_rsync_excludes:
-            - --exclude=.env
-            - --exclude=secrets.sops.env
-            - --exclude=www/
-        scooter:
-          stack_source: muppets/scooter
-          stack_path: /home/jon
-          stack_rsync_excludes:
-            - --exclude=.env
-            - --exclude=secrets.sops.env
-        walter:
-          stack_source: muppets/walter
-          stack_path: /mnt/user/appdata
-          stack_rsync_excludes:
-            - --exclude=.env
-            - --exclude=secrets.sops.env
+      children:
+        raspberry_pis:
+          hosts:
+            bunsen:
+              stack_source: muppets/bunsen
+              stack_path: /home/jon/homeassistant
+              stack_rsync_excludes:
+                - --exclude=.env
+                - --exclude=secrets.sops.env
+                - --exclude=homeassistant/config/
+              raspberry_pi_packages:
+                - bluez
+                - dbus
+            gonzo:
+              stack_source: muppets/gonzo
+              stack_path: /home/jon
+              stack_rsync_excludes:
+                - --exclude=.env
+                - --exclude=secrets.sops.env
+                - --exclude=www/
+            scooter:
+              stack_source: muppets/scooter
+              stack_path: /home/jon
+              stack_rsync_excludes:
+                - --exclude=.env
+                - --exclude=secrets.sops.env
+              kiosk_enabled: true
+        unraid:
+          hosts:
+            walter:
+              stack_source: muppets/walter
+              stack_path: /mnt/user/appdata
+              stack_rsync_excludes:
+                - --exclude=.env
+                - --exclude=secrets.sops.env

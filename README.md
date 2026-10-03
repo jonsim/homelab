@@ -95,13 +95,46 @@ Validate all four Compose models using the documented placeholder values:
 ./scripts/check-docker-compose.sh
 ```
 
+## Bootstrap a host
+
+Use Raspberry Pi Imager to write the 64-bit Raspberry Pi OS image appropriate
+for the host. In Imager's customisation settings:
+
+- Set the hostname to the inventory name (`bunsen`, `gonzo` or `scooter`).
+- Create the `jon` account.
+- Enable SSH using the controller's public key.
+- Configure the locale, timezone and Wi-Fi if required.
+
+The initial account must have passwordless `sudo`, as a standard Raspberry Pi
+OS account does. Ensure the new host is reachable through the SSH alias named
+in `ansible/inventory.yml`, then bootstrap it:
+
+```sh
+uv run ansible-playbook ansible/bootstrap.yml --limit scooter
+```
+
+Alternatively, use `--ask-become-pass` for interactive sudo. Normal stack
+deployments and Walter's validation-only bootstrap do not require sudo.
+
+Bootstrap upgrades the OS, installs common dependencies, configures automatic
+security updates, installs Docker Engine and its Compose plugin from
+[Docker's official Debian repository](https://docs.docker.com/engine/install/debian/),
+and grants `jon` Docker access. Host-specific tasks install Bunsen's Bluetooth
+support and configure Scooter's Chromium kiosk, desktop autologin,
+network-at-boot behaviour and screen blanking using
+[`raspi-config`](https://www.raspberrypi.com/documentation/computers/configuration.html).
+The first successful bootstrap ends with an automatic reboot; Ansible waits for
+the host to return before finishing.
+
+Running bootstrap against Walter only validates the tools supplied by Unraid;
+it does not modify the Unraid operating system or Docker installation.
+
 ## Deploy a stack
 
-Deployment uses Ansible over SSH without requiring Python, SOPS or an age key
-on the target. Each target needs an SSH server, `rsync`, `base64`, `sha256sum`,
-Docker with the Compose plugin, and a matching SSH host alias. The controller
-decrypts the host's `secrets.sops.env` in memory and atomically installs `.env`
-on the target with mode `0600`.
+Deployment uses Ansible over SSH. Bootstrap installs the Raspberry Pi
+dependencies; Unraid must already provide them. Targets do not need SOPS or an
+age key. The controller decrypts the host's `secrets.sops.env` in memory and
+atomically installs `.env` on the target with mode `0600`.
 
 Install the pinned Ansible collection:
 

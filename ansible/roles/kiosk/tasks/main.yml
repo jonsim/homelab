@@ -1,0 +1,47 @@
+---
+- name: Install Chromium
+  ansible.builtin.apt:
+    name: chromium
+    state: present
+
+- name: Configure desktop autologin
+  ansible.builtin.command: raspi-config nonint do_boot_behaviour B4
+  environment:
+    SUDO_USER: "{{ bootstrap_user }}"
+  changed_when: false
+
+- name: Disable desktop screen blanking
+  ansible.builtin.command: raspi-config nonint do_blanking 1
+  environment:
+    SUDO_USER: "{{ bootstrap_user }}"
+  changed_when: false
+
+- name: Wait for networking during boot
+  ansible.builtin.command: raspi-config nonint do_boot_wait 1
+  changed_when: false
+
+- name: Create the labwc configuration directory
+  ansible.builtin.file:
+    path: "/home/{{ bootstrap_user }}/.config/labwc"
+    state: directory
+    owner: "{{ bootstrap_user }}"
+    group: "{{ bootstrap_user }}"
+    mode: "0755"
+
+- name: Install the kiosk launcher
+  ansible.builtin.copy:
+    src: launch.sh
+    dest: /usr/local/bin/home-assistant-kiosk
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Configure kiosk desktop autostart
+  ansible.builtin.blockinfile:
+    path: "/home/{{ bootstrap_user }}/.config/labwc/autostart"
+    create: true
+    block: /usr/local/bin/home-assistant-kiosk &
+    marker: "# {mark} ANSIBLE MANAGED HOME ASSISTANT KIOSK"
+    owner: "{{ bootstrap_user }}"
+    group: "{{ bootstrap_user }}"
+    mode: "0644"

@@ -1,0 +1,85 @@
+---
+- name: Bootstrap Raspberry Pi hosts
+  hosts: raspberry_pis
+  gather_facts: false
+  become: true
+  serial: 1
+
+  pre_tasks:
+    - name: Check passwordless sudo access
+      ansible.builtin.raw: "true"
+      changed_when: false
+
+    - name: Install Python for Ansible
+      ansible.builtin.raw: |
+        if ! test -x /usr/bin/python3 || ! dpkg-query --show python3-apt >/dev/null 2>&1; then
+          apt-get update
+          apt-get install --yes python3 python3-apt
+        fi
+      register: python_bootstrap
+      changed_when: "'Setting up python3' in python_bootstrap.stdout"
+
+    - name: Gather host facts
+      ansible.builtin.setup:
+
+    - name: Require 64-bit Raspberry Pi OS
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.architecture == 'aarch64'
+          - ansible_facts.distribution == 'Debian'
+        fail_msg: >-
+          {{ inventory_hostname }} must run 64-bit Raspberry Pi OS; found
+          {{ ansible_facts.distribution }} on {{ ansible_facts.architecture }}.
+
+    - name: Check whether initial bootstrap is complete
+      ansible.builtin.stat:
+        path: /var/lib/homelab-bootstrap-complete
+      register: bootstrap_marker
+
+  roles:
+    - role: base
+    - role: docker
+    - role: raspberry_pi
+
+  post_tasks:
+    - name: Apply Scooter kiosk configuration
+      ansible.builtin.include_role:
+        name: kiosk
+      when: kiosk_enabled | default(false) | bool
+
+    - name: Mark initial bootstrap complete
+      ansible.builtin.file:
+        path: /var/lib/homelab-bootstrap-complete
+        state: touch
+        owner: root
+        group: root
+        mode: "0644"
+      when: not bootstrap_marker.stat.exists
+      notify: Reboot host
+
+- name: Validate the Unraid bootstrap boundary
+  hosts: unraid
+  gather_facts: false
+  serial: 1
+
+  tasks:
+    - name: Check Unraid deployment prerequisites
+      ansible.builtin.raw: |
+        missing=""
+        for prerequisite in rsync docker base64 sha256sum awk; do
+          if ! command -v "$prerequisite" >/dev/null 2>&1; then
+            missing="${missing} ${prerequisite}"
+          fi
+        done
+        if command -v docker >/dev/null 2>&1 && ! docker compose version >/dev/null 2>&1; then
+          missing="${missing} docker-compose-plugin"
+        fi
+        if test -n "$missing"; then
+          echo "Missing Unraid prerequisites:${missing}" >&2
+          exit 1
+        fi
+      changed_when: false
+
+    - name: Confirm Docker daemon access on Unraid
+      ansible.builtin.raw: docker info >/dev/null
+      changed_when: false

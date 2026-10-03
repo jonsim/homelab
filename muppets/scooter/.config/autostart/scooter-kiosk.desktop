@@ -1,7 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Scooter Home Assistant kiosk
-Comment=Open the Home Assistant dashboard in Chromium kiosk mode
-Exec=/home/jon/kiosk/launch.sh
-Terminal=false
-X-GNOME-Autostart-enabled=true

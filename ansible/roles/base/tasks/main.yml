@@ -1,0 +1,52 @@
+---
+- name: Update the Apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Upgrade installed packages
+  ansible.builtin.apt:
+    upgrade: dist
+  when: bootstrap_upgrade_packages | bool
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name: "{{ base_packages }}"
+    state: present
+
+- name: Set the hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+  notify: Reboot host
+
+- name: Link the system timezone
+  ansible.builtin.file:
+    src: "/usr/share/zoneinfo/{{ bootstrap_timezone }}"
+    dest: /etc/localtime
+    state: link
+    force: true
+
+- name: Record the system timezone
+  ansible.builtin.copy:
+    content: "{{ bootstrap_timezone }}\n"
+    dest: /etc/timezone
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Configure automatic Apt updates
+  ansible.builtin.copy:
+    src: 20auto-upgrades
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: "0644"
+  when: bootstrap_unattended_upgrades | bool
+
+- name: Create the stack directory
+  ansible.builtin.file:
+    path: "{{ stack_path }}"
+    state: directory
+    owner: "{{ bootstrap_user }}"
+    group: "{{ bootstrap_user }}"
+    mode: "0755"

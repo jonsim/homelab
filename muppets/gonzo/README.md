@@ -16,27 +16,21 @@ rpi-web-stack/
 ### Requirements
 
 - A Raspberry Pi running 64-bit Raspberry Pi OS Lite
-- An SSH server and a `jon` account that can run Docker without `sudo`
-- `rsync`, `base64`, `sha256sum` and `awk` available on the host
-- Docker Engine with the Docker Compose plugin
+- An SSH server and a `jon` account with passwordless `sudo` for bootstrap
 - Nothing else listening on TCP 80 or TCP/UDP 443
 - Enough persistent storage for the website, MariaDB and Portainer data
 
-1. Install Docker + Compose (if not already):
-   ```
-   curl -fsSL https://get.docker.com | sh
-   sudo usermod -aG docker $USER
-   ```
-   Log out and back in for the group change to apply.
+`ansible/bootstrap.yml` installs the host utilities, Docker Engine and the
+Docker Compose plugin, and grants `jon` Docker access.
 
-2. From the repository root on the control machine, run
+1. From the repository root on the control machine, run
    `sops edit muppets/gonzo/secrets.sops.env`, replace every placeholder, then
    run `uv run ansible-playbook ansible/deploy.yml --limit gonzo`. Ansible
    installs the decrypted environment at `~/.env` with mode `0600`.
 
-3. Put your site files (the ones you downloaded from cPanel) into `www/`.
+2. Put your site files (the ones you downloaded from cPanel) into `www/`.
 
-4. Edit the encrypted environment on the controller when values change:
+3. Edit the encrypted environment on the controller when values change:
    ```
    sops edit muppets/gonzo/secrets.sops.env
    ```
@@ -46,7 +40,7 @@ rpi-web-stack/
    just start the stack without cloudflared running
    (`docker compose up -d caddy php db portainer`) and add it later.
 
-5. Ensure local DNS resolves `portainer.home.jonsim.com` to Gonzo's LAN
+4. Ensure local DNS resolves `portainer.home.jonsim.com` to Gonzo's LAN
    address, then validate and bring the stack up:
    ```
    docker compose config --quiet
@@ -59,13 +53,13 @@ rpi-web-stack/
    Create the initial administrator account, then select the local Docker
    environment.
 
-6. Import your database dump into the `db` container:
+5. Import your database dump into the `db` container:
    ```
    docker compose exec -T db mysql -u root -p"$MYSQL_ROOT_PASSWORD" changeme_db_name < your_dump.sql
    ```
    (swap in your real DB name from the deployed `.env`)
 
-7. Test locally before touching Cloudflare/DNS at all:
+6. Test locally before touching Cloudflare/DNS at all:
    ```
    docker compose exec caddy wget --quiet --output-document=- http://localhost
    ```

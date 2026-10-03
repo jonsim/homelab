@@ -13,13 +13,13 @@ ports 80 and 443, plus UDP 443 for HTTP/3, directly on the host.
 ## Requirements
 
 - A Raspberry Pi 5 running 64-bit Raspberry Pi OS Lite
-- An SSH server and a `jon` account that can run Docker without `sudo`
-- `rsync`, `base64`, `sha256sum` and `awk` available on the host
-- Docker Engine 23 or later with the Docker Compose plugin
-- D-Bus and BlueZ on the host if Home Assistant will use Bluetooth
+- An SSH server and a `jon` account with passwordless `sudo` for bootstrap
 - The configured Zigbee USB device present at the path in `compose.yaml`
 - Nothing else listening on TCP 80 or TCP/UDP 443
 - TCP 9001 reachable from Gonzo, but not from the Internet
+
+`ansible/bootstrap.yml` installs the host utilities, D-Bus, BlueZ, Docker
+Engine and the Docker Compose plugin, and grants `jon` Docker access.
 
 The Home Assistant container is privileged, matching Home Assistant's general
 Raspberry Pi container guidance and allowing attached radios to be discovered.
