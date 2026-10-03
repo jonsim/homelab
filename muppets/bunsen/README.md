@@ -63,6 +63,11 @@ Open `http://<bunsen-lan-address>:8123`. During onboarding, upload the backup
 from the previous Home Assistant OS installation and enter its backup emergency
 kit key. The restored configuration is stored in `homeassistant/config`.
 
+The first startup can remove the restored Home Assistant Supervisor entry but
+leave its dependent integrations failed until the next startup. If the logs
+report a missing `SUPERVISOR` environment variable, let startup finish and
+restart Home Assistant once. Do not add fake Supervisor environment variables.
+
 After the restore, check radios, integrations, entities and automations using
 the direct port 8123 address before introducing the reverse proxy.
 
