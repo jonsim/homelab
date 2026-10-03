@@ -19,6 +19,9 @@ stack, environment template and notes.
   - Cloudflare Tunnel
   - Caddy
   - Portainer
+- `scooter` - HA dashboard:
+  - Caddy
+  - Portainer Agent
 - `walter` - Unraid NAS:
   - Caddy
   - Portainer Agent
@@ -75,17 +78,18 @@ every placeholder by editing the encrypted files through SOPS:
 ```sh
 sops edit muppets/bunsen/secrets.sops.env
 sops edit muppets/gonzo/secrets.sops.env
+sops edit muppets/scooter/secrets.sops.env
 sops edit muppets/walter/secrets.sops.env
 ```
 
 Verify that only encrypted values are present, then commit `.sops.yaml` and the
-three `secrets.sops.env` files. Never commit the age identity. To give another
+four `secrets.sops.env` files. Never commit the age identity. To give another
 controller or administrator access later, add its public recipient to the
 creation rule and use `sops updatekeys` on each encrypted file.
 
 ## Validate a stack
 
-Validate all three Compose models using the documented placeholder values:
+Validate all four Compose models using the documented placeholder values:
 
 ```sh
 ./scripts/check-docker-compose.sh
@@ -128,7 +132,7 @@ reconciles the stack, and waits for its health checks. Secret-bearing tasks use
 Portainer and its agents mount the Docker socket so they can manage each host.
 Access to that socket is equivalent to root access: only trusted administrators
 should have access to Portainer, and agent port 9001 must be reachable only from
-Gonzo. All three hosts must use the same high-entropy `AGENT_SECRET`.
+Gonzo. All agent hosts must use the same high-entropy `AGENT_SECRET`.
 
 SOPS protects secrets stored in Git, while the target `.env` files protect them
 at runtime only through filesystem permissions. Anyone with root access or

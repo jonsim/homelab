@@ -4,14 +4,17 @@ set -euo pipefail
 
 readonly caddy_image="caddy:2.11.4-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b"
 readonly placeholder_cloudflare_token="0123456789abcdef0123456789abcdef01234567"
-readonly stacks=(muppets/bunsen muppets/gonzo muppets/walter)
 
 status=0
 tmp_file=""
 trap 'rm -f "$tmp_file"' EXIT
 
-for stack in "${stacks[@]}"; do
+for stack in muppets/*; do
     caddyfile="${stack}/caddy/Caddyfile"
+    if [ ! -f "${caddyfile}" ]; then
+	continue
+    fi
+
     tmp_file=$(mktemp)
 
     echo "Checking Caddy formatting: ${caddyfile}"

@@ -1,0 +1,44 @@
+name: scooter
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  portainer-agent:
+    image: portainer/agent:2.45.1@sha256:38bc1dc7b8470eecbd979d444aa5d0a187dacf1245f2b54466f0f25f4c6d9a7c
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      AGENT_SECRET: ${AGENT_SECRET:?Set AGENT_SECRET in .env}
+    ports:
+      - "9001:9001"
+    volumes:
+      # Root-equivalent host access required for Portainer management.
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+
+  caddy:
+    build:
+      context: ./caddy
+    restart: unless-stopped
+    logging: *default-logging
+    network_mode: host
+    environment:
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?Set CLOUDFLARE_API_TOKEN in .env}
+    volumes:
+      - ./caddy:/etc/caddy:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  caddy_data:
+  caddy_config:

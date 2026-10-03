@@ -16,6 +16,12 @@ all:
             - --exclude=.env
             - --exclude=secrets.sops.env
             - --exclude=www/
+        scooter:
+          stack_source: muppets/scooter
+          stack_path: /home/jon
+          stack_rsync_excludes:
+            - --exclude=.env
+            - --exclude=secrets.sops.env
         walter:
           stack_source: muppets/walter
           stack_path: /mnt/user/appdata

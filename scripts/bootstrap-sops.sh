@@ -21,7 +21,7 @@ if [[ -e .sops.yaml ]]; then
     exit 1
 fi
 
-for stack in muppets/bunsen muppets/gonzo muppets/walter; do
+for stack in muppets/bunsen muppets/gonzo muppets/scooter muppets/walter; do
     if [[ -e "${stack}/secrets.sops.env" ]]; then
         echo "${stack}/secrets.sops.env already exists; refusing to overwrite it." >&2
         exit 1
@@ -31,7 +31,7 @@ done
 recipient=$1
 sed "s/AGE_RECIPIENT/${recipient}/" .sops.yaml.example > .sops.yaml
 
-for stack in muppets/bunsen muppets/gonzo muppets/walter; do
+for stack in muppets/*; do
     encrypted_file="${stack}/secrets.sops.env"
     cp "${stack}/.env.example" "$encrypted_file"
     sops encrypt --in-place "$encrypted_file"
