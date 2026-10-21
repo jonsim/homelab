@@ -1,4 +1,4 @@
-FROM php:8.2.35-fpm-alpine@sha256:a7e345653610c099afe283e8b724cc8a997646be77a5caca54822a8cd1d04c98
+FROM php:8.5.12-fpm-alpine@sha256:4c9541a4506014672d074652a1cc9754d3c5f97cad6c6027bae35be0e4a4dea9
 
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 

@@ -69,7 +69,7 @@ Docker Compose plugin, and grants `jon` Docker access.
    it's only for local testing, not needed for the tunnel.
 
 ## Notes
-- PHP is pinned to 8.2 in `php/Dockerfile` — check what your old host ran
+- PHP is pinned to 8.5 in `php/Dockerfile` — check what your old host ran
   (`php -v` if you had shell access, or it's usually shown in cPanel's
   "MultiPHP Manager") and change the base image tag if needed.
 - Caddy is the LAN entry point and publishes HTTP and HTTPS on ports `80` and
