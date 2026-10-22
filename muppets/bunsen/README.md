@@ -1,14 +1,17 @@
 # Bunsen Home Assistant stack
 
-This stack runs Home Assistant Container, Caddy and a Portainer Agent on the
-Raspberry Pi 5 named `bunsen`. Caddy obtains and renews a publicly trusted
-certificate using a Cloudflare DNS-01 challenge, then proxies HTTPS traffic to
-Home Assistant. The Portainer Agent lets the Portainer Server on Gonzo manage
-Bunsen's Docker engine.
+This stack runs Home Assistant Container, a weather dashboard generator, Caddy
+and a Portainer Agent on the Raspberry Pi 5 named `bunsen`. Caddy obtains and
+renews a publicly trusted certificate using a Cloudflare DNS-01 challenge,
+proxies HTTPS traffic to Home Assistant and serves the generated weather image
+to the internal network. The Portainer Agent lets the Portainer Server on Gonzo
+manage Bunsen's Docker engine.
 
-Both services use host networking. Home Assistant therefore retains LAN device
-discovery, while Caddy can reach it at `127.0.0.1:8123`. Caddy publishes TCP
-ports 80 and 443, plus UDP 443 for HTTP/3, directly on the host.
+Home Assistant and Caddy use host networking. Home Assistant therefore retains
+LAN device discovery, while Caddy can reach it at `127.0.0.1:8123`. Caddy
+publishes TCP ports 80, 443 and 8080, plus UDP 443 for HTTP/3, directly on the
+host. Port 8080 serves only the weather dashboard PNG and must remain restricted
+to the trusted LAN.
 
 ## Requirements
 
@@ -16,6 +19,7 @@ ports 80 and 443, plus UDP 443 for HTTP/3, directly on the host.
 - An SSH server and a `jon` account with passwordless `sudo` for bootstrap
 - The configured Zigbee USB device present at the path in `compose.yaml`
 - Nothing else listening on TCP 80 or TCP/UDP 443
+- Nothing else listening on TCP 8080
 - TCP 9001 reachable from Gonzo, but not from the Internet
 
 `ansible/bootstrap.yml` installs the host utilities, D-Bus, BlueZ, Docker
@@ -42,6 +46,11 @@ Set a Cloudflare API token. Restrict the token to the
 if the default `homeassistant.home.jonsim.com` name is not desired. Deploying
 through Ansible decrypts this file and installs `/home/jon/homeassistant/.env` on
 Bunsen with mode `0600`.
+
+Set `WEATHER_DASHBOARD_LATITUDE` and `WEATHER_DASHBOARD_LONGITUDE` to the
+location rendered by the weather dashboard. Coordinates can identify a home
+address, so keep the real values only in `secrets.sops.env`; the plaintext
+example contains placeholders.
 
 Make local DNS resolve `HA_DOMAIN` to Bunsen's LAN address. DNS-01 proves
 control of the domain but does not create the client-facing A or AAAA record.
@@ -99,6 +108,47 @@ Home Assistant should then be available at the HTTPS URL configured by
 `HA_DOMAIN`. Port 8123 remains available on the trusted LAN as an emergency
 fallback.
 
+## Weather dashboard
+
+The `weather-dashboard` container renders an 800x480, six-colour PNG using
+Open-Meteo. It generates a missing or stale image when the container starts,
+then aligns subsequent runs to the top of every hour in `Europe/London`. A
+failed request or render leaves the last successful image in place. Caddy
+serves the result without client caching at:
+
+```text
+http://bunsen:8080/weather-dashboard.png
+```
+
+The endpoint is unauthenticated and intended only for the trusted internal
+network. Do not forward TCP 8080 from the router. Verify the published image
+from another LAN device with:
+
+```sh
+curl --fail --output weather-dashboard.png \
+  http://bunsen:8080/weather-dashboard.png
+file weather-dashboard.png
+```
+
+View generation logs or run an immediate refresh without disturbing the hourly
+schedule:
+
+```sh
+docker compose logs --tail=100 -f weather-dashboard
+docker compose exec weather-dashboard \
+  /usr/local/bin/run-weather-dashboard run-now
+```
+
+The image build fetches the latest commit from the application's `main` branch.
+Rebuild the service to pick up a newly pushed version, then verify the rendered
+image before deploying:
+
+```sh
+docker compose build --pull weather-dashboard
+docker compose up -d weather-dashboard
+docker compose logs --tail=100 -f weather-dashboard
+```
+
 ## Connect Portainer on Gonzo
 
 The Portainer Agent publishes TCP 9001 on Bunsen. It speaks HTTPS itself and is
@@ -140,7 +190,7 @@ View status and recent logs:
 
 ```sh
 docker compose ps
-docker compose logs --tail=100 homeassistant caddy portainer-agent
+docker compose logs --tail=100 homeassistant weather-dashboard caddy portainer-agent
 ```
 
 Reload Caddy after editing `caddy/Caddyfile`:
@@ -174,8 +224,9 @@ docker compose up -d portainer-agent
 ```
 
 The automated job backs up `homeassistant/config`. The `bunsen_caddy_data`
-volume contains regenerable ACME material and is intentionally excluded. Do
-not run `docker compose down -v` unless deleting persistent data is intentional.
+volume contains regenerable ACME material and the weather dashboard output is
+regenerated from Open-Meteo, so both are intentionally excluded. Do not run
+`docker compose down -v` unless deleting persistent data is intentional.
 
 ## Automated backup and recovery
 

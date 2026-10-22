@@ -6,3 +6,14 @@
 
 	reverse_proxy 127.0.0.1:8123
 }
+
+:8080 {
+	@dashboard path /weather-dashboard.png
+	handle @dashboard {
+		root * /srv/weather-dashboard
+		header Cache-Control "no-store"
+		file_server
+	}
+
+	respond 404
+}

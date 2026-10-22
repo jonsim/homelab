@@ -11,6 +11,7 @@ stack, environment template and notes.
   - _Not docker_
 - `bunsen` - HA server:
   - Home Assistant
+  - Weather dashboard
   - Caddy
   - Portainer Agent
 - `gonzo` - service server:

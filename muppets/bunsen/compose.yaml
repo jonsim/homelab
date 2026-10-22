@@ -30,6 +30,24 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
 
+  weather-dashboard:
+    build:
+      context: ./weather-dashboard
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-Europe/London}
+      WEATHER_DASHBOARD_LATITUDE: ${WEATHER_DASHBOARD_LATITUDE:?Set WEATHER_DASHBOARD_LATITUDE in .env}
+      WEATHER_DASHBOARD_LONGITUDE: ${WEATHER_DASHBOARD_LONGITUDE:?Set WEATHER_DASHBOARD_LONGITUDE in .env}
+    volumes:
+      - weather_dashboard_output:/output
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/weather-dashboard-healthcheck"]
+      interval: 5m
+      timeout: 10s
+      retries: 2
+      start_period: 2m
+
   caddy:
     build:
       context: ./caddy
@@ -45,6 +63,7 @@ services:
       - ./caddy:/etc/caddy:ro
       - caddy_data:/data
       - caddy_config:/config
+      - weather_dashboard_output:/srv/weather-dashboard:ro
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:2019/config/"]
       interval: 30s
@@ -71,3 +90,4 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+  weather_dashboard_output:
