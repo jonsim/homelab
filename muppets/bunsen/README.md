@@ -112,9 +112,11 @@ fallback.
 
 The `weather-dashboard` container renders an 800x480, six-colour PNG using
 Open-Meteo. It generates a missing or stale image when the container starts,
-then aligns subsequent runs to the top of every hour in `Europe/London`. A
-failed request or render leaves the last successful image in place. Caddy
-serves the result without client caching at:
+then runs at 54 minutes past every hour in `Europe/London`. If generation
+fails, it retries after progressively longer delays for five minutes, with the
+last attempt at 59 minutes past the hour. A completely failed run leaves the
+last successful image in place. Caddy serves the result without client caching
+at:
 
 ```text
 http://bunsen:8080/weather-dashboard.png
